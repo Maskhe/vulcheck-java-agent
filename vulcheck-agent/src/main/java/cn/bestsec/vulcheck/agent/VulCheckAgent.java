@@ -17,12 +17,13 @@ import java.lang.instrument.Instrumentation;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.jar.JarFile;
 
 public class VulCheckAgent {
     public static void premain(String args, Instrumentation inst) throws IOException {
-        ClassLoader classLoader1 = VulCheckAgent.class.getClassLoader();
-        URL url = classLoader1.getResource("vulcheck-spy-1.0-SNAPSHOT.jar");
-        System.out.println(url);
+//        File file = new File("C:\\Users\\hjx\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy-1.0-SNAPSHOT.jar");
+//        JarFile jarFile = new JarFile(file);
+//        inst.appendToBootstrapClassLoaderSearch(jarFile);
         Gson gson = new Gson();
         // 读取服务端hook规则
         String json = "";
