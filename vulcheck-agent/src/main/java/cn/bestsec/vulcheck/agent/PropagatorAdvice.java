@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.spy.Dispatcher;
+import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
@@ -17,25 +19,7 @@ public class PropagatorAdvice {
     public static void exit(@Advice.Origin Class<?> cls, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
                             @Advice.Origin("#t") Class<?> declaringType,
                             @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
-        String uniqueMethod = cls.getName() + "." + exe.getName();
-        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
-        String outParam = matchedHookPoints.get(uniqueMethod).getOut();
-        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
-        HashSet<Object> set = taintPool.get();
-        if (inParam.startsWith("p")){
-            inParam = inParam.replace("p", "");
-            for (String param : inParam.split(",")){
-
-                set.add(args[Integer.parseInt(param)-1]);
-            }
-        }else if(inParam.startsWith("o")){
-//            System.out.println(caller);
-        }
-        if (outParam.equals("ret")) {
-            set.add(ret);
-        }
-        System.out.println("退出propagator节点");
+        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+        dispatcher.exitPropagator(cls, exe, args, ret);
     }
 }

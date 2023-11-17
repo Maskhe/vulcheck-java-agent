@@ -6,9 +6,9 @@ public interface Dispatcher {
     void enterSource();
     void enterPropagator();
 
-    void enterSink();
+    void enterSink(Class<?> cls, Executable executable, Object[] objs);
 
     void exitSource(Class<?> cls, Executable executable, Object[] objs, String ret);
-    void exitPropagator();
+    void exitPropagator(Class<?> cls, Executable executable, Object[] objs, Object ret);
     void exitSink();
 }
