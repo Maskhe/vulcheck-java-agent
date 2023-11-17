@@ -1,5 +1,6 @@
-package cn.bestsec.vulcheck.spy;
+package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.Data;
@@ -19,15 +20,18 @@ import java.util.*;
 
 @Data
 public class VulCheckContext {
-    private HashMap<String, HookRule> hookRules;
+    private HashMap<String, ArrayList<HookRule>> hookRules;
+    private HashMap<String, HookRule> matchedHookPoints;
     private ThreadLocal<HashSet<Object>> taintPool;
-    private VulCheckContext(HashMap<String, HookRule> hookRules){
+    private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
         this.taintPool = ThreadLocal.withInitial(HashSet::new);
+        DispatcherHandler.setDispatcher(new DispatcherImpl());
+        this.matchedHookPoints = new HashMap<>();
     }
 
     private static class VulCheckContextHolder{
-        private static HashMap<String, HookRule> getHookRules(){
+        private static HashMap<String, ArrayList<HookRule>> getHookRules(){
             Gson gson = new Gson();
             // 读取服务端hook规则
             String json = "";
@@ -54,16 +58,7 @@ public class VulCheckContext {
             }
 
             HashMap<String, ArrayList<HookRule>> hookRules = gson.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
-            HashMap<String, HookRule> res = new HashMap<>();
-            for(Map.Entry<String, ArrayList<HookRule>> entry: hookRules.entrySet()){
-                String className = entry.getKey();
-                String uniqueMethod;
-                for(HookRule hookRule: entry.getValue()){
-                    uniqueMethod = className + "." + hookRule.getMethodName();
-                    res.put(uniqueMethod, hookRule);
-                }
-            }
-            return res;
+            return hookRules;
         }
         private static final VulCheckContext INSTANCE = new VulCheckContext(getHookRules());
     }
@@ -72,7 +67,7 @@ public class VulCheckContext {
         return VulCheckContextHolder.INSTANCE;
     }
 
-    public void addHookRule(String methodName, HookRule hookRule){
-        this.hookRules.put(methodName, hookRule);
+    public void addMatchedHookPoint(String methodName, HookRule hookRule){
+        this.matchedHookPoints.put(methodName, hookRule);
     }
 }

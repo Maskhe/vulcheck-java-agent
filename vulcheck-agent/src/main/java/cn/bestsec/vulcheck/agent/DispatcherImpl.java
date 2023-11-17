@@ -1,22 +1,31 @@
 package cn.bestsec.vulcheck.agent;
 
-import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import cn.bestsec.vulcheck.spy.Dispatcher;
 
 import java.lang.reflect.Executable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class PropagatorAdvice {
-    @Advice.OnMethodEnter
-    public static void enter(){
-        System.out.println("进入propagator节点");
+public class DispatcherImpl implements Dispatcher {
+
+    @Override
+    public void enterSource() {
+        System.out.println("进入source节点");;
     }
 
-    @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
-                            @Advice.Origin("#t") Class<?> declaringType,
-                            @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
+    @Override
+    public void enterPropagator() {
+
+    }
+
+    @Override
+    public void enterSink() {
+
+    }
+
+    @Override
+    public void exitSource(Class<?> cls, Executable exe, Object[] args, String ret) {
         String uniqueMethod = cls.getName() + "." + exe.getName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
@@ -27,7 +36,6 @@ public class PropagatorAdvice {
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
             for (String param : inParam.split(",")){
-
                 set.add(args[Integer.parseInt(param)-1]);
             }
         }else if(inParam.startsWith("o")){
@@ -35,7 +43,18 @@ public class PropagatorAdvice {
         }
         if (outParam.equals("ret")) {
             set.add(ret);
+//            log.info("当前污点池" + set);
         }
-        System.out.println("退出propagator节点");
+        System.out.println("退出source节点");
+    }
+
+    @Override
+    public void exitPropagator() {
+
+    }
+
+    @Override
+    public void exitSink() {
+
     }
 }

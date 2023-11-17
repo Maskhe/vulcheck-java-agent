@@ -1,4 +1,4 @@
-package cn.bestsec.vulcheck.spy;
+package cn.bestsec.vulcheck.agent;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 

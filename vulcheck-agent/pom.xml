@@ -73,10 +73,10 @@
                         <includes>
                             <include>net.bytebuddy:byte-buddy:jar:</include>
                             <include>com.google.code.gson:gson:jar:</include>
-                            <include>org.slf4j:slf4j-api:jar:</include>
-                            <include>ch.qos.logback:logback-core:jar:</include>
-                            <include>ch.qos.logback:logback-classic:jar:</include>
-                            <include>cn.bestsec:vulcheck-spy:jar:</include>
+<!--                            <include>org.slf4j:slf4j-api:jar:</include>-->
+<!--                            <include>ch.qos.logback:logback-core:jar:</include>-->
+<!--                            <include>ch.qos.logback:logback-classic:jar:</include>-->
+<!--                            <include>cn.bestsec:vulcheck-spy:jar:</include>-->
                             <!--              <include>org.apache.httpcomponents:httpclient:jar:</include>-->
                         </includes>
                     </artifactSet>
@@ -101,6 +101,34 @@
                     </archive>
                 </configuration>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-assembly-plugin</artifactId>-->
+<!--                <version>2.4</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        &lt;!&ndash; 绑定到package生命周期阶段上 &ndash;&gt;-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <descriptors>-->
+<!--                                <descriptor>-->
+<!--                                    src/main/resources/assembly.xml-->
+<!--                                </descriptor>-->
+<!--                            </descriptors>-->
+<!--&lt;!&ndash;                            <descriptorRefs>&ndash;&gt;-->
+<!--&lt;!&ndash;                                <descriptorRef>&ndash;&gt;-->
+<!--&lt;!&ndash;                                    bin&ndash;&gt;-->
+<!--&lt;!&ndash;                                </descriptorRef>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </descriptorRefs>&ndash;&gt;-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+
+<!--                </executions>-->
+
+<!--            </plugin>-->
         </plugins>
     </build>
 </project>

@@ -1,12 +1,10 @@
 package cn.bestsec.vulcheck.agent;
 
-import cn.bestsec.vulcheck.spy.HookRule;
 import net.bytebuddy.asm.Advice;
 
 import java.lang.reflect.Executable;
 import java.util.HashMap;
 import java.util.HashSet;
-import cn.bestsec.vulcheck.spy.VulCheckContext;
 
 public class SinkAdvice {
     @Advice.OnMethodEnter
@@ -16,8 +14,8 @@ public class SinkAdvice {
         System.out.println("进入sink节点");
         String uniqueMethod = cls.getName() + "." + exe.getName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-        HashMap<String, HookRule> hookRules = vulCheckContext.getHookRules();
-        String inParam = hookRules.get(uniqueMethod).getIn();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
         ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
         HashSet<Object> set = taintPool.get();
         if (inParam.startsWith("p")){
@@ -35,6 +33,6 @@ public class SinkAdvice {
 
     @Advice.OnMethodExit
     public static void exit(){
-        System.out.println("退出sink节点");
+//        System.out.println("退出sink节点");
     }
 }
