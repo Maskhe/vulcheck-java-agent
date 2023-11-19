@@ -3,6 +3,7 @@ package cn.bestsec.vulcheck.agent;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Executable;
@@ -12,7 +13,7 @@ import java.util.HashSet;
 public class PropagatorAdvice {
     @Advice.OnMethodEnter
     public static void enter(){
-        System.out.println("进入propagator节点");
+//        System.out.println("进入propagator节点");
     }
 
     @Advice.OnMethodExit
@@ -20,6 +21,7 @@ public class PropagatorAdvice {
                             @Advice.Origin("#t") Class<?> declaringType,
                             @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+//        System.out.println(dispatcher);
         dispatcher.exitPropagator(cls, exe, args, ret);
     }
 }

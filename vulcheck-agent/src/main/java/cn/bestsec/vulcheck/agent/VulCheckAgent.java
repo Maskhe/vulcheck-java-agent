@@ -13,14 +13,13 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.JarFile;
 
 public class VulCheckAgent {
     public static void premain(String args, Instrumentation inst) throws IOException {
-        JarFile jarFile = new JarFile("C:\\Users\\hjx\\IdeaProjects\\vulcheck-java-agent\\vulcheck-agent\\src\\main\\resources\\vulcheck-spy.jar");
+        JarFile jarFile = new JarFile("D:\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy.jar");
         inst.appendToBootstrapClassLoaderSearch(jarFile);
 
 //        initHookRules();
