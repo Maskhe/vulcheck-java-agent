@@ -21,8 +21,7 @@ public class DispatcherImpl implements Dispatcher {
     }
 
     @Override
-    public void enterSink(Class<?> cls, Executable exe, Object[] args, Object o) {
-//        System.out.println("进入sink节点");
+    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         String uniqueMethod = cls.getName() + "." + exe.getName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
@@ -31,21 +30,20 @@ public class DispatcherImpl implements Dispatcher {
         HashSet<Object> set = taintPool.get();
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
-            for (String param : inParam.split(",")){
-                if (set.contains(args[Integer.parseInt(param) - 1])){
+            for (String paramPosition : inParam.split(",")){
+                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))){
                     System.out.println("发现漏洞！");
                 }
             }
         }else if(inParam.startsWith("o")){
-//            if()
-//            System.out.println(caller);
-//            System.out.println(set);
-//            System.out.println();
+            if(set.contains(System.identityHashCode(caller))) {
+                System.out.println("发现漏洞！");
+            }
         }
     }
 
     @Override
-    public void exitSource(Class<?> cls, Executable exe, Object[] args, String ret) {
+    public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, String ret) {
         String uniqueMethod = cls.getName() + "." + exe.getName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
@@ -56,20 +54,18 @@ public class DispatcherImpl implements Dispatcher {
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
             for (String param : inParam.split(",")){
-                set.add(args[Integer.parseInt(param)-1]);
+                set.add(System.identityHashCode(args[Integer.parseInt(param)-1]));
             }
         }else if(inParam.startsWith("o")){
-//            System.out.println(caller);
         }
         if (outParam.equals("ret")) {
-            set.add(ret);
-//            log.info("当前污点池" + set);
+            set.add(System.identityHashCode(ret));
         }
         System.out.println("退出source节点");
     }
 
     @Override
-    public void exitPropagator(Class<?> cls, Executable exe, Object[] args, Object ret) {
+    public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         String clsName = cls.getName();
         String methodName = exe.getName();
         String uniqueMethod = "";
@@ -80,27 +76,75 @@ public class DispatcherImpl implements Dispatcher {
         }
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-//        System.out.println(uniqueMethod);
-//        System.out.println(matchedHookPoints);
         String inParam = matchedHookPoints.get(uniqueMethod).getIn();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut();
-//        System.out.println(inParam);
-//        System.out.println(outParam);
         ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
         HashSet<Object> set = taintPool.get();
+        // 解析入参及出参
+        boolean isHitTaintPool = false;
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
-            for (String param : inParam.split(",")){
-
-                set.add(args[Integer.parseInt(param)-1]);
+            for (String paramPosition : inParam.split(",")){
+                if (set.contains(args[Integer.parseInt(paramPosition)-1])) {
+                    isHitTaintPool = true;
+                }
             }
         }else if(inParam.startsWith("o")){
-//            System.out.println(caller);
+            if (set.contains(System.identityHashCode(caller))) {
+                isHitTaintPool = true;
+            }
         }
-        if (outParam.equals("ret")) {
-            set.add(ret);
+
+        if (isHitTaintPool) {
+            if (outParam.equals("ret")) {
+                set.add(System.identityHashCode(ret));
+            } else if (outParam.equals("o")) {
+                set.add(System.identityHashCode(caller));
+            } else if (outParam.startsWith("p")) {
+                System.out.println("传播节点出参为p");
+            }
         }
-//        System.out.println("退出propagator节点");
+
+    }
+
+    @Override
+    public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
+        String clsName = cls.getName();
+        String methodName = exe.getName();
+        String uniqueMethod = "";
+        if (clsName.equals(methodName)){
+            uniqueMethod = clsName + ".<init>";
+        } else {
+            uniqueMethod = cls.getName() + "." + exe.getName();
+        }
+        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
+        String outParam = matchedHookPoints.get(uniqueMethod).getOut();
+        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
+        HashSet<Object> set = taintPool.get();
+        // 解析入参及出参
+        boolean isHitTaintPool = false;
+        if (inParam.startsWith("p")){
+            inParam = inParam.replace("p", "");
+            for (String paramPosition : inParam.split(",")){
+                if (set.contains(args[Integer.parseInt(paramPosition)-1])) {
+                    isHitTaintPool = true;
+                }
+            }
+        }else if(inParam.startsWith("o")){
+            if (set.contains(System.identityHashCode(caller))) {
+                isHitTaintPool = true;
+            }
+        }
+
+        if (isHitTaintPool) {
+            if (outParam.equals("o")) {
+                set.add(System.identityHashCode(caller));
+            } else if (outParam.startsWith("p")) {
+                System.out.println("传播节点出参为p");
+            }
+        }
     }
 
     @Override

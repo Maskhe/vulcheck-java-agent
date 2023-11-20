@@ -19,7 +19,7 @@ import java.util.jar.JarFile;
 
 public class VulCheckAgent {
     public static void premain(String args, Instrumentation inst) throws IOException {
-        JarFile jarFile = new JarFile("D:\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy.jar");
+        JarFile jarFile = new JarFile("C:\\Users\\hjx\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy.jar");
         inst.appendToBootstrapClassLoaderSearch(jarFile);
 
 //        initHookRules();
@@ -83,8 +83,10 @@ public class VulCheckAgent {
         }
         if (hookRule.getType().equals("source")) {
             return Advice.to(SourceAdvice.class).on(elementMatcher);
-        } else if (hookRule.getType().equals("propagator")) {
+        } else if (hookRule.getType().equals("propagator") && hookRule.getOut().equals("ret")) {
             return Advice.to(PropagatorAdvice.class).on(elementMatcher);
+        } else if (hookRule.getType().equals("propagator")) {
+            return Advice.to(PropagatorWithNoRetAdvice.class).on(elementMatcher);
         } else {
             return Advice.to(SinkAdvice.class).on(elementMatcher);
         }

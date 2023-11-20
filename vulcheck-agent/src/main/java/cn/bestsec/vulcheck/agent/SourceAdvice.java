@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 /**
+ * 污点来源节点处理逻辑
  * @author hjxin
- * @description 污点来源节点处理逻辑
  * @since 2023/11/13
  */
 
@@ -23,9 +23,9 @@ public class SourceAdvice {
     }
 
     @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Return(typing = Assigner.Typing.DYNAMIC) String ret){
+    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Return(typing = Assigner.Typing.DYNAMIC) String ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.exitSource(cls, exe, args, ret);
+        dispatcher.exitSource(cls, caller, exe, args, ret);
     }
 
 }
