@@ -3,6 +3,7 @@ package cn.bestsec.vulcheck.agent;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Executable;
 import java.util.HashMap;
@@ -17,10 +18,10 @@ public class SinkAdvice {
     @Advice.OnMethodEnter
     public static void enter(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
                              @Advice.Origin("#t") Class<?> declaringType,
-                             @Advice.Origin("#t") String simpleTypeName, @Advice.Return Object ret){
+                             @Advice.Origin("#t") String simpleTypeName){
+//        System.out.println("进入sink");
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.enterSink(cls, caller, exe, args, ret);
-
+        dispatcher.enterSink(cls, caller, exe, args);
     }
 
     @Advice.OnMethodExit

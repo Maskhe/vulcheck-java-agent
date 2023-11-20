@@ -5,6 +5,7 @@ import net.bytebuddy.description.method.MethodDescription;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -21,7 +22,7 @@ public class DispatcherImpl implements Dispatcher {
     }
 
     @Override
-    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
         String uniqueMethod = cls.getName() + "." + exe.getName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
@@ -85,7 +86,7 @@ public class DispatcherImpl implements Dispatcher {
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
             for (String paramPosition : inParam.split(",")){
-                if (set.contains(args[Integer.parseInt(paramPosition)-1])) {
+                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))) {
                     isHitTaintPool = true;
                 }
             }
@@ -128,7 +129,7 @@ public class DispatcherImpl implements Dispatcher {
         if (inParam.startsWith("p")){
             inParam = inParam.replace("p", "");
             for (String paramPosition : inParam.split(",")){
-                if (set.contains(args[Integer.parseInt(paramPosition)-1])) {
+                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))) {
                     isHitTaintPool = true;
                 }
             }

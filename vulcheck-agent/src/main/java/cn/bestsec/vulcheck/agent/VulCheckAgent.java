@@ -19,10 +19,11 @@ import java.util.jar.JarFile;
 
 public class VulCheckAgent {
     public static void premain(String args, Instrumentation inst) throws IOException {
+
+        // vulcheck-spy.jar使用BootStrapClassLoader加载
         JarFile jarFile = new JarFile("C:\\Users\\hjx\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy.jar");
         inst.appendToBootstrapClassLoaderSearch(jarFile);
 
-//        initHookRules();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         AgentBuilder agentBuilder = new AgentBuilder.Default().ignore(ElementMatchers.nameContains(".bytebuddy"))
                 .with(new VulCheckListener()).with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
@@ -42,32 +43,6 @@ public class VulCheckAgent {
             }
         }
         agentBuilder.installOn(inst);
-    }
-
-    public static boolean initHookRules() throws IOException {
-        String url = "http://localhost:8000/hookrulesmanage/?inUse=1";
-        Gson gson = new Gson();
-        String json = "";
-
-        URL uri = new URL(url);
-        HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
-        connection.setRequestMethod("GET");
-        connection.connect();
-        int responseCode = connection.getResponseCode();
-        if(responseCode == HttpURLConnection.HTTP_OK){
-            InputStream inputStream = connection.getInputStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            String line = "";
-            StringBuilder response = new StringBuilder();
-            while((line = bufferedReader.readLine()) != null){
-                response.append(line).append("\n");
-            }
-            json = response.toString();
-        }
-        HashMap<String, ArrayList<HookRule>> hookRules = gson.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
-        VulCheckContext.newInstance().setHookRules(hookRules);
-        return true;
     }
 
     public static AsmVisitorWrapper buildMethodMatchers(HookRule hookRule, TypeDescription typeDescription) {
