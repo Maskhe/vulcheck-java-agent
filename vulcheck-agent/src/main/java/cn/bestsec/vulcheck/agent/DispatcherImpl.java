@@ -16,6 +16,17 @@ import java.util.HashSet;
  */
 public class DispatcherImpl implements Dispatcher {
     private final VulCheckContext vulCheckContext = VulCheckContext.newInstance();
+
+    public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object args, Object ret) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
+        String uniqueMethod = cls.getName() + "." + exe.getName();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
+        HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
+
+    }
     @Override
     public void enterHttp() {
         vulCheckContext.setEnterHttp(true);
@@ -107,30 +118,6 @@ public class DispatcherImpl implements Dispatcher {
         }
 
     }
-    @Override
-    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        if (!vulCheckContext.isEnterHttp()) {
-            return;
-        }
-        String uniqueMethod = cls.getName() + "." + exe.getName();
-        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
-        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
-        HashSet<Object> set = taintPool.get();
-        if (inParam.startsWith("p")){
-            inParam = inParam.replace("p", "");
-            for (String paramPosition : inParam.split(",")){
-                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))){
-                    System.out.println("发现漏洞！");
-                }
-            }
-        }else if(inParam.startsWith("o")){
-            if(set.contains(System.identityHashCode(caller))) {
-                System.out.println("发现漏洞！");
-            }
-        }
-    }
-
 
 
 
@@ -176,6 +163,29 @@ public class DispatcherImpl implements Dispatcher {
         }
     }
 
+    @Override
+    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
+        String uniqueMethod = cls.getName() + "." + exe.getName();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
+        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
+        HashSet<Object> set = taintPool.get();
+        if (inParam.startsWith("p")){
+            inParam = inParam.replace("p", "");
+            for (String paramPosition : inParam.split(",")){
+                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))){
+                    System.out.println("发现漏洞！");
+                }
+            }
+        }else if(inParam.startsWith("o")){
+            if(set.contains(System.identityHashCode(caller))) {
+                System.out.println("发现漏洞！");
+            }
+        }
+    }
     @Override
     public void exitSink() {
 
