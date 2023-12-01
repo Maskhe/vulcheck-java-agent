@@ -9,64 +9,65 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+/**
+ * 分发器实现类
+ * @author tntaxin
+ * @since 2023/11/20
+ */
 public class DispatcherImpl implements Dispatcher {
+    private final VulCheckContext vulCheckContext = VulCheckContext.newInstance();
+    @Override
+    public void enterHttp() {
+        vulCheckContext.setEnterHttp(true);
+    }
+
+    @Override
+    public void exitHttp() {
+        vulCheckContext.setEnterHttp(false);
+    }
 
     @Override
     public void enterSource() {
-        System.out.println("进入source节点");;
+//        System.out.println("进入source节点");;
     }
 
+    @Override
+    public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
+        String uniqueMethod = cls.getName() + "." + exe.getName();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
+        HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
+        // source节点只把出参放入污点池，出参应该没有或的情况，只有与的情况
+        if (outParam.contains("&")) {
+            String[] params = outParam.split("&");
+            for (String param : params) {
+                if (param.equals("o")) {
+                    taintPool.add(System.identityHashCode(caller));
+                } else if (param.equals("ret") || param.equals("r")) {
+                    taintPool.add(System.identityHashCode(ret));
+                } else if (param.startsWith("p")) {
+                    String paramPosition = param.replace("p", "");
+                    for (String position: paramPosition.split(",")) {
+                        taintPool.add(System.identityHashCode(args[Integer.parseInt(position)-1]));
+                    }
+                }
+            }
+        }
+        System.out.println("退出source节点");
+    }
     @Override
     public void enterPropagator() {
 
     }
 
     @Override
-    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        String uniqueMethod = cls.getName() + "." + exe.getName();
-        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
-        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
-        HashSet<Object> set = taintPool.get();
-        if (inParam.startsWith("p")){
-            inParam = inParam.replace("p", "");
-            for (String paramPosition : inParam.split(",")){
-                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))){
-                    System.out.println("发现漏洞！");
-                }
-            }
-        }else if(inParam.startsWith("o")){
-            if(set.contains(System.identityHashCode(caller))) {
-                System.out.println("发现漏洞！");
-            }
-        }
-    }
-
-    @Override
-    public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, String ret) {
-        String uniqueMethod = cls.getName() + "." + exe.getName();
-        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
-        String outParam = matchedHookPoints.get(uniqueMethod).getOut();
-        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
-        HashSet<Object> set = taintPool.get();
-        if (inParam.startsWith("p")){
-            inParam = inParam.replace("p", "");
-            for (String param : inParam.split(",")){
-                set.add(System.identityHashCode(args[Integer.parseInt(param)-1]));
-            }
-        }else if(inParam.startsWith("o")){
-        }
-        if (outParam.equals("ret")) {
-            set.add(System.identityHashCode(ret));
-        }
-        System.out.println("退出source节点");
-    }
-
-    @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
         String clsName = cls.getName();
         String methodName = exe.getName();
         String uniqueMethod = "";
@@ -75,7 +76,6 @@ public class DispatcherImpl implements Dispatcher {
         } else {
             uniqueMethod = cls.getName() + "." + exe.getName();
         }
-        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
         String inParam = matchedHookPoints.get(uniqueMethod).getIn();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut();
@@ -107,9 +107,38 @@ public class DispatcherImpl implements Dispatcher {
         }
 
     }
+    @Override
+    public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
+        String uniqueMethod = cls.getName() + "." + exe.getName();
+        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
+        String inParam = matchedHookPoints.get(uniqueMethod).getIn();
+        ThreadLocal<HashSet<Object>> taintPool =  vulCheckContext.getTaintPool();
+        HashSet<Object> set = taintPool.get();
+        if (inParam.startsWith("p")){
+            inParam = inParam.replace("p", "");
+            for (String paramPosition : inParam.split(",")){
+                if (set.contains(System.identityHashCode(args[Integer.parseInt(paramPosition)-1]))){
+                    System.out.println("发现漏洞！");
+                }
+            }
+        }else if(inParam.startsWith("o")){
+            if(set.contains(System.identityHashCode(caller))) {
+                System.out.println("发现漏洞！");
+            }
+        }
+    }
+
+
+
 
     @Override
     public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
+        if (!vulCheckContext.isEnterHttp()) {
+            return;
+        }
         String clsName = cls.getName();
         String methodName = exe.getName();
         String uniqueMethod = "";
@@ -118,7 +147,6 @@ public class DispatcherImpl implements Dispatcher {
         } else {
             uniqueMethod = cls.getName() + "." + exe.getName();
         }
-        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
         String inParam = matchedHookPoints.get(uniqueMethod).getIn();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut();

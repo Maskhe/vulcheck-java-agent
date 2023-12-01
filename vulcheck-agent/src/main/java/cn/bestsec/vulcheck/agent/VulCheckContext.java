@@ -4,6 +4,8 @@ import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -13,9 +15,9 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * @author
- * @description
- * @since
+ * VulCheck上下文，单例对象，存储着污点池、hook规则等关键信息供漏洞检测时使用
+ * @author tntaxin
+ * @since 2023/11/17
  */
 
 @Data
@@ -23,6 +25,8 @@ public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookPoints;
     private ThreadLocal<HashSet<Object>> taintPool;
+    private boolean enterHttp;
+    private boolean exitHttp;
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
         this.taintPool = ThreadLocal.withInitial(HashSet::new);

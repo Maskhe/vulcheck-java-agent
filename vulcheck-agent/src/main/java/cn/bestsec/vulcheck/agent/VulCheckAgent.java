@@ -17,11 +17,30 @@ import java.net.URL;
 import java.util.*;
 import java.util.jar.JarFile;
 
+
+/**
+ * VulCheck入口
+ * @author tntaxin
+ * @since 2023/11/15
+ */
 public class VulCheckAgent {
     public static void premain(String args, Instrumentation inst) throws IOException {
+        String spyJarName = "vulcheck-spy.jar";
+        String spyJarPath = "C:\\Users\\hjx\\tmp\\vulcheck-spy.jar";
+        try (InputStream inputStream = VulCheckAgent.class.getClassLoader().getResourceAsStream(spyJarName)) {
+            if (inputStream != null) {
+               FileOutputStream fos = new FileOutputStream(spyJarPath);
+               byte[] bytes = new byte[1024];
+               int bytesRead;
+               while ((bytesRead = inputStream.read(bytes)) != -1) {
+                   fos.write(bytes, 0, bytesRead);
+               }
+               fos.close();
+            }
+        }
 
         // vulcheck-spy.jar使用BootStrapClassLoader加载
-        JarFile jarFile = new JarFile("C:\\Users\\hjx\\IdeaProjects\\vulcheck-java-agent\\vulcheck-spy\\target\\vulcheck-spy.jar");
+        JarFile jarFile = new JarFile(spyJarPath);
         inst.appendToBootstrapClassLoaderSearch(jarFile);
 
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();

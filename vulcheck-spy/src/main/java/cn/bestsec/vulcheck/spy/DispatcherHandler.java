@@ -1,13 +1,10 @@
 package cn.bestsec.vulcheck.spy;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class DispatcherHandler {
+    @Getter
+    @Setter
     private static Dispatcher dispatcher;
-    public static void setDispatcher(Dispatcher dispathcerImpl){
-        dispatcher = dispathcerImpl;
-    }
-
-    public static Dispatcher getDispatcher(){
-        return dispatcher;
-    }
-
 }

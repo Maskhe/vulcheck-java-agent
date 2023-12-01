@@ -4,7 +4,15 @@ import net.bytebuddy.description.method.MethodDescription;
 
 import java.lang.reflect.Executable;
 
+
+/**
+ * 分发器接口，存储着javaagent对不同类型节点的hook处理逻辑
+ * @author tntaxin
+ * @since 2023/11/20
+ */
 public interface Dispatcher {
+    void enterHttp();
+    void exitHttp();
     void enterSource();
     void enterPropagator();
 
@@ -18,7 +26,7 @@ public interface Dispatcher {
      * @param args
      * @param ret
      */
-    void exitSource(Class<?> cls, Object caller, Executable executable, Object[] args, String ret);
+    void exitSource(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret);
 
     /**
      * 有返回值的传播节点处理逻辑

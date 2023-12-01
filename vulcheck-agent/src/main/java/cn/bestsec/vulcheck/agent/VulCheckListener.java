@@ -5,6 +5,11 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
 
+/**
+ * Bytebuddy AgentBuilder监视器，可监控改写字节码过程中bytebuddy的行为，利用调试
+ * @author tntaxin
+ * @since 2023/11/16
+ */
 public class VulCheckListener implements AgentBuilder.Listener {
     @Override
     public void onDiscovery(String s, ClassLoader classLoader, JavaModule javaModule, boolean b) {
