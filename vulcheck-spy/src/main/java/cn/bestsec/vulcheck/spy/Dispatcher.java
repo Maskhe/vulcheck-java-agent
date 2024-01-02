@@ -16,6 +16,11 @@ public interface Dispatcher {
     void enterSource();
     void enterPropagator();
 
+    /**
+     * 进入无返回值的propagator节点时的增强代码
+     */
+    void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
+
     void enterSink(Class<?> cls, Object caller, Executable executable, Object[] args);
 
     /**

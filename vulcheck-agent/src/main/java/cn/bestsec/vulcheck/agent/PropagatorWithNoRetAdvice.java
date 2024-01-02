@@ -13,10 +13,12 @@ import java.lang.reflect.Executable;
  * @since 2023/11/15
  */
 public class PropagatorWithNoRetAdvice {
-    @Advice.OnMethodEnter
-    public static void enter(){
-//        System.out.println("进入propagator节点");
-    }
+
+//    @Advice.OnMethodEnter
+//    public static void enter(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
+//        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+//        dispatcher.enterPropagatorWithNoRet(cls, caller, exe, args);
+//    }
 
     @Advice.OnMethodExit
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,

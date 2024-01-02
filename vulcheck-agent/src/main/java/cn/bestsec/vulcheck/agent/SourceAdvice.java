@@ -24,7 +24,7 @@ public class SourceAdvice {
     }
 
     @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Return(typing = Assigner.Typing.DYNAMIC) String ret){
+    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.exitSource(cls, caller, exe, args, ret);
     }

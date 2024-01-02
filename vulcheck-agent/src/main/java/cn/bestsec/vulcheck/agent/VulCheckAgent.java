@@ -75,7 +75,9 @@ public class VulCheckAgent {
         }else {
             elementMatcher = ElementMatchers.isMethod().and(ElementMatchers.named(methodName)).and(ElementMatchers.hasDescriptor(descriptor));
         }
-        if (hookRule.getType().equals("source")) {
+        if (hookRule.getType().equals("entry")) {
+            return Advice.to(EntryAdvice.class).on(elementMatcher);
+        }else if (hookRule.getType().equals("source")) {
             return Advice.to(SourceAdvice.class).on(elementMatcher);
         } else if (hookRule.getType().equals("propagator") && hookRule.getOut().equals("ret")) {
             return Advice.to(PropagatorAdvice.class).on(elementMatcher);

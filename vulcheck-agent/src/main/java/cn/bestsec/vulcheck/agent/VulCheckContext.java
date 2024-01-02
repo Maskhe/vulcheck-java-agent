@@ -30,7 +30,7 @@ public class VulCheckContext {
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
         this.taintPool = ThreadLocal.withInitial(HashSet::new);
-        DispatcherHandler.setDispatcher(new DispatcherImpl());
+        DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookPoints = new HashMap<>();
     }
 
