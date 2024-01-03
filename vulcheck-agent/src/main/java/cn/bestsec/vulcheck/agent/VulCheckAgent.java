@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.spy.Dispatcher;
+import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.bytebuddy.agent.builder.AgentBuilder;

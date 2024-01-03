@@ -24,6 +24,7 @@ public class DispatcherImpl implements Dispatcher {
     }
 
     private void parseArgPostion(String inParam, String outParam,Object caller, Object[] args, Object ret, NodeType nodeType, HashSet<Object> taintPool) {
+        vulCheckContext.enterAgent();
         boolean isHitTaintPool = false;
         if (inParam.isEmpty()) {
 
@@ -56,6 +57,7 @@ public class DispatcherImpl implements Dispatcher {
             System.out.println("发现漏洞！");
         }
         if (nodeType == NodeType.SOURCE || (isHitTaintPool && nodeType == NodeType.PROPAGATOR)) {
+            // todo:出参如果是复合类型，也需要拆分
             if (outParam.contains("&")) {
                 String[] params = outParam.split("&");
                 for (String param : params) {
@@ -77,11 +79,13 @@ public class DispatcherImpl implements Dispatcher {
             }
         }
         System.out.println("当前污点池：" + taintPool);
+        vulCheckContext.leaveAgent();
     }
-    public void handleTaint(NodeType nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!vulCheckContext.isEnterHttp()) {
+    public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+        if (!vulCheckContext.isEnterHttp() || vulCheckContext.agentDepth > 0) {
             return;
         }
+        vulCheckContext.enterAgent();
         String clsName = cls.getName();
         String methodName = exe.getName();
         String uniqueMethod;
@@ -95,17 +99,18 @@ public class DispatcherImpl implements Dispatcher {
         String inParam = matchedHookPoints.get(uniqueMethod).getIn().toLowerCase();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
         HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
-        parseArgPostion(inParam, outParam, caller, args, ret, nodeType, taintPool);
+        parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool);
+        vulCheckContext.leaveAgent();
     }
     @Override
     public void enterHttp() {
-        System.out.println("进入http节点");
+//        System.out.println("进入http节点");
         vulCheckContext.setEnterHttp(true);
     }
 
     @Override
     public void exitHttp() {
-        System.out.println("退出http节点");
+//        System.out.println("退出http节点");
         vulCheckContext.setEnterHttp(false);
     }
 
@@ -116,41 +121,63 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        handleTaint(NodeType.SOURCE, cls, caller, exe, args, ret);
-        System.out.println("退出source节点");
+        handleTaint("source", cls, caller, exe, args, ret);
+//        System.out.println("退出source节点");
     }
     @Override
     public void enterPropagator() {
-        System.out.println("进入propagator节点");
+//        System.out.println("进入propagator节点");
     }
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         // 解析入参及出参
-        handleTaint(NodeType.PROPAGATOR, cls, caller, exe, args, ret);
-        System.out.println("退出propagator节点");
+        handleTaint("propagator", cls, caller, exe, args, ret);
+//        System.out.println("退出propagator节点");
     }
 
 
     @Override
     public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
-        System.out.println("进入propagator节点");
-        handleTaint(NodeType.PROPAGATOR, cls, caller, executable, args, null);
+//        System.out.println("进入propagator节点");
+        handleTaint("propagator", cls, caller, executable, args, null);
     }
 
     @Override
     public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        handleTaint(NodeType.PROPAGATOR, cls, caller, exe, args, null);
-        System.out.println("退出propagator节点");
+//        System.out.println(NodeType.PROPAGATOR);
+//        test();
+        handleTaint("propagator", cls, caller, exe, args, null);
+//        System.out.println("退出propagator节点");
     }
 
     @Override
     public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        System.out.println("进入sink节点-------------------------------------");
-        handleTaint(NodeType.SINK, cls, caller, exe, args, null);
+//        System.out.println("进入sink节点-------------------------------------");
+        handleTaint("sink", cls, caller, exe, args, null);
     }
     @Override
     public void exitSink() {
-        System.out.println("退出sink节点--------------------------------------");
+//        System.out.println("退出sink节点--------------------------------------");
+    }
+
+    @Override
+    public void enterAgent() {
+        vulCheckContext.agentDepth++;
+    }
+
+    @Override
+    public void leaveAgent() {
+        vulCheckContext.agentDepth--;
+    }
+
+    @Override
+    public boolean isEnterAgent() {
+        return vulCheckContext.agentDepth > 0;
+    }
+
+    @Override
+    public void test() {
+        System.out.println("tre");
     }
 }

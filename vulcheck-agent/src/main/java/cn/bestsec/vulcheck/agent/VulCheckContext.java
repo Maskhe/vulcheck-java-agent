@@ -27,6 +27,7 @@ public class VulCheckContext {
     private ThreadLocal<HashSet<Object>> taintPool;
     private boolean enterHttp;
     private boolean exitHttp;
+    public int agentDepth = 0;
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
         this.taintPool = ThreadLocal.withInitial(HashSet::new);
@@ -73,5 +74,16 @@ public class VulCheckContext {
 
     public void addMatchedHookPoint(String methodName, HookRule hookRule){
         this.matchedHookPoints.put(methodName, hookRule);
+    }
+
+    public boolean isEnterAgent() {
+        return this.agentDepth > 0;
+    }
+    public void enterAgent() {
+        this.agentDepth++;
+    }
+
+    public void leaveAgent() {
+        this.agentDepth--;
     }
 }

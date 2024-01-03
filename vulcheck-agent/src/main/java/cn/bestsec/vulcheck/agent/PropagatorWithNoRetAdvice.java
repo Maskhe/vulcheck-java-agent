@@ -21,10 +21,11 @@ public class PropagatorWithNoRetAdvice {
 //    }
 
     @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
-                            @Advice.Origin("#t") Class<?> declaringType,
-                            @Advice.Origin("#t") String simpleTypeName){
+    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+//        System.out.println(dispatcher);
+
+//        dispatcher.exitPropagator(cls, caller, exe, args, null);
         dispatcher.exitPropagatorWithNoRet(cls, caller, exe, args);
     }
 }

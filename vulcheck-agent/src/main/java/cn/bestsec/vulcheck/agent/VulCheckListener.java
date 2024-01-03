@@ -18,7 +18,10 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, boolean b, DynamicType dynamicType) {
+        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
+        vulCheckContext.enterAgent();
         System.out.println("改写：" + typeDescription.toString());
+        vulCheckContext.leaveAgent();
     }
 
     @Override
@@ -28,8 +31,9 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onError(String s, ClassLoader classLoader, JavaModule javaModule, boolean b, Throwable throwable) {
-        System.out.println("错误：" + s);
-        System.out.println(throwable.getMessage());
+
+//        System.out.println("错误：" + s);
+//        System.out.println(throwable.getMessage());
     }
 
     @Override

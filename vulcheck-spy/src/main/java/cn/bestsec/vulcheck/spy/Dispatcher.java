@@ -56,4 +56,18 @@ public interface Dispatcher {
      *
      */
     void exitSink();
+
+    /**
+     * 进入agent执行范围
+     */
+    void enterAgent();
+
+    /**
+     * 离开Agent执行范围
+     */
+    void leaveAgent();
+
+    boolean isEnterAgent();
+
+    void test();
 }
