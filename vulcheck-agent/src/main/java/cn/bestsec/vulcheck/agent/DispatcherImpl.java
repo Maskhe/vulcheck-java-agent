@@ -23,7 +23,7 @@ public class DispatcherImpl implements Dispatcher {
         this.vulCheckContext = vulCheckContext;
     }
 
-    private void parseArgPostion(String inParam, String outParam,Object caller, Object[] args, Object ret, NodeType nodeType, HashSet<Object> taintPool) {
+    private void parseArgPostion(String inParam, String outParam,Object caller, Object[] args, Object ret, NodeType nodeType, HashSet<Object> taintPool, String uniqueMethod) {
         vulCheckContext.enterAgent();
         boolean isHitTaintPool = false;
         if (inParam.isEmpty()) {
@@ -35,16 +35,22 @@ public class DispatcherImpl implements Dispatcher {
                 // todo: 其他复合类型检查，例如Map、List类型
                 if (taintValue instanceof Object[]) {
                     for (Object taintValueItem : (Object[])taintValue) {
-                        System.out.println(taintValueItem);
-                        System.out.println(System.identityHashCode(taintValueItem));
                         if (taintPool.contains(System.identityHashCode(taintValueItem))) {
+                            if (nodeType == NodeType.SINK) {
+                                System.out.println("当前污点值：" + taintValue);
+                                System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
+                            }
                             isHitTaintPool = true;
                         }
                     }
-                } else {
-                    if (taintPool.contains(System.identityHashCode(taintValue))) {
-                        isHitTaintPool = true;
+                }
+                if (taintPool.contains(System.identityHashCode(taintValue))) {
+                    if (nodeType == NodeType.SINK) {
+                        System.out.println("当前污点值：" + taintValue);
+                        System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
                     }
+
+                    isHitTaintPool = true;
                 }
             }
         }else if(inParam.startsWith("o")){
@@ -52,7 +58,9 @@ public class DispatcherImpl implements Dispatcher {
                 isHitTaintPool = true;
             }
         }
-
+        if (isHitTaintPool || nodeType == NodeType.SOURCE) {
+            System.out.println(uniqueMethod);
+        }
         if (nodeType == NodeType.SINK && isHitTaintPool) {
             System.out.println("发现漏洞！");
         }
@@ -76,9 +84,21 @@ public class DispatcherImpl implements Dispatcher {
                 taintPool.add(System.identityHashCode(ret));
             } else if (outParam.equalsIgnoreCase("o")) {
                 taintPool.add(System.identityHashCode(caller));
+            } else if (outParam.startsWith("p")) {
+                outParam = outParam.replace("p", "");
+                for (String paramPosition : outParam.split(",")){
+                    Object taintValue = args[Integer.parseInt(paramPosition)-1];
+                    // todo: 其他复合类型检查，例如Map、List类型
+                    if (taintValue instanceof Object[]) {
+                        for (Object taintValueItem : (Object[])taintValue) {
+                            taintPool.add(System.identityHashCode(taintValueItem));
+                        }
+                    }
+                    taintPool.add(System.identityHashCode(taintValue));
+                }
             }
         }
-        System.out.println("当前污点池：" + taintPool);
+//        System.out.println("当前污点池：" + taintPool);
         vulCheckContext.leaveAgent();
     }
     public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
@@ -94,12 +114,12 @@ public class DispatcherImpl implements Dispatcher {
         } else {
             uniqueMethod = cls.getName() + "." + exe.getName();
         }
-        System.out.println(uniqueMethod);
+
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
         String inParam = matchedHookPoints.get(uniqueMethod).getIn().toLowerCase();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
         HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
-        parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool);
+        parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool, uniqueMethod);
         vulCheckContext.leaveAgent();
     }
     @Override
@@ -116,13 +136,13 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterSource() {
-//        System.out.println("进入source节点");;
+//        System.out.println("进入source节点");
     }
 
     @Override
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         handleTaint("source", cls, caller, exe, args, ret);
-//        System.out.println("退出source节点");
+        System.out.println("退出source节点");
     }
     @Override
     public void enterPropagator() {
