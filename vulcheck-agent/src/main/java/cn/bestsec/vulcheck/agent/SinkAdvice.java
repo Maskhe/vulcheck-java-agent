@@ -19,13 +19,13 @@ public class SinkAdvice {
     public static void enter(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
                              @Advice.Origin("#t") Class<?> declaringType,
                              @Advice.Origin("#t") String simpleTypeName){
-        System.out.println("进入sink");
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.enterSink(cls, caller, exe, args);
     }
 
     @Advice.OnMethodExit
     public static void exit(){
-        System.out.println("退出sink节点");
+        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+        dispatcher.exitSink();
     }
 }

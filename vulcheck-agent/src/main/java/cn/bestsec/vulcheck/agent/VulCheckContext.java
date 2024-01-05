@@ -24,13 +24,18 @@ import java.util.*;
 public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookPoints;
-    private ThreadLocal<HashSet<Object>> taintPool;
+    private InheritableThreadLocal<HashSet<Object>> taintPool;
     private boolean enterHttp;
     private boolean exitHttp;
     public int agentDepth = 0;
+    public int sinkDepth = 0;
+    public int propagatorDepth = 0;
+    public int sourceDepth = 0;
+    public int filterDepth = 0;
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
-        this.taintPool = ThreadLocal.withInitial(HashSet::new);
+        this.taintPool = new InheritableThreadLocal<>();
+        this.taintPool.set(new HashSet<Object>());
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookPoints = new HashMap<>();
     }
@@ -85,5 +90,17 @@ public class VulCheckContext {
 
     public void leaveAgent() {
         this.agentDepth--;
+    }
+
+    public boolean isValidSink() {
+        return this.sourceDepth == 0 && this.sinkDepth == 1;
+    }
+
+    public boolean isValidPropagator() {
+        return this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0;
+    }
+
+    public boolean isValidSource() {
+        return this.sourceDepth == 1;
     }
 }

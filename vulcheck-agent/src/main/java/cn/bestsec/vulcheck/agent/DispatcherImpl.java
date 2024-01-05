@@ -173,12 +173,22 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-//        System.out.println("进入sink节点-------------------------------------");
+        vulCheckContext.sinkDepth ++;
+        if (!vulCheckContext.isValidSink()){
+            return;
+        }
+        System.out.println("进入sink节点-------------------------------------");
         handleTaint("sink", cls, caller, exe, args, null);
     }
     @Override
     public void exitSink() {
-//        System.out.println("退出sink节点--------------------------------------");
+        vulCheckContext.sinkDepth --;
+        System.out.println(vulCheckContext.sinkDepth);
+        if (!vulCheckContext.isValidSink()){
+            return;
+        }
+
+        System.out.println("退出sink节点--------------------------------------");
     }
 
     @Override
