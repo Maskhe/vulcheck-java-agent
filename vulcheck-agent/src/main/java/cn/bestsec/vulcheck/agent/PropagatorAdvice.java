@@ -18,7 +18,9 @@ import java.util.HashSet;
 public class PropagatorAdvice {
     @Advice.OnMethodEnter
     public static void enter(){
-//        System.out.println("进入propagator节点");
+
+        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+        dispatcher.enterPropagator();
     }
 
     @Advice.OnMethodExit

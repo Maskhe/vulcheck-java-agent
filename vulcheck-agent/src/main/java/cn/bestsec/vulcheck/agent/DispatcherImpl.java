@@ -124,51 +124,57 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterHttp() {
-//        System.out.println("进入http节点");
         vulCheckContext.setEnterHttp(true);
     }
 
     @Override
     public void exitHttp() {
-//        System.out.println("退出http节点");
         vulCheckContext.setEnterHttp(false);
     }
 
     @Override
     public void enterSource() {
-//        System.out.println("进入source节点");
+        vulCheckContext.sourceDepth ++;
     }
 
     @Override
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+        if (!vulCheckContext.isValidSource()) {
+            vulCheckContext.sourceDepth --;
+            return;
+        }
+        vulCheckContext.sourceDepth --;
         handleTaint("source", cls, caller, exe, args, ret);
-        System.out.println("退出source节点");
     }
     @Override
     public void enterPropagator() {
-//        System.out.println("进入propagator节点");
+        vulCheckContext.propagatorDepth ++;
     }
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        // 解析入参及出参
+        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+            vulCheckContext.propagatorDepth --;
+            return;
+        }
+        vulCheckContext.propagatorDepth --;
         handleTaint("propagator", cls, caller, exe, args, ret);
-//        System.out.println("退出propagator节点");
     }
 
 
     @Override
     public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
-//        System.out.println("进入propagator节点");
-        handleTaint("propagator", cls, caller, executable, args, null);
+        vulCheckContext.propagatorDepth ++;
     }
 
     @Override
     public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
-//        System.out.println(NodeType.PROPAGATOR);
-//        test();
+        if (!vulCheckContext.isValidPropagator()) {
+            vulCheckContext.propagatorDepth --;
+            return;
+        }
+        vulCheckContext.propagatorDepth --;
         handleTaint("propagator", cls, caller, exe, args, null);
-//        System.out.println("退出propagator节点");
     }
 
     @Override
@@ -182,12 +188,11 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void exitSink() {
-        vulCheckContext.sinkDepth --;
-        System.out.println(vulCheckContext.sinkDepth);
         if (!vulCheckContext.isValidSink()){
+            vulCheckContext.sinkDepth --;
             return;
         }
-
+        vulCheckContext.sinkDepth --;
         System.out.println("退出sink节点--------------------------------------");
     }
 

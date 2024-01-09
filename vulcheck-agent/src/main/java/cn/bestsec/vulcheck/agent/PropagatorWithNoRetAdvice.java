@@ -14,18 +14,17 @@ import java.lang.reflect.Executable;
  */
 public class PropagatorWithNoRetAdvice {
 
-//    @Advice.OnMethodEnter
-//    public static void enter(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
-//        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-//        dispatcher.enterPropagatorWithNoRet(cls, caller, exe, args);
-//    }
+    @Advice.OnMethodEnter
+    public static void enter(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
+//        System.out.println("进入传播节点");
+        Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+        dispatcher.enterPropagatorWithNoRet(cls, caller, exe, args);
+    }
 
     @Advice.OnMethodExit
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-//        System.out.println(dispatcher);
-
-//        dispatcher.exitPropagator(cls, caller, exe, args, null);
         dispatcher.exitPropagatorWithNoRet(cls, caller, exe, args);
+//        System.out.println("退出传播节点");
     }
 }
