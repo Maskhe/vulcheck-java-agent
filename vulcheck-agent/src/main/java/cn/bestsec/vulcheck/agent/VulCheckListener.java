@@ -31,9 +31,8 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onError(String s, ClassLoader classLoader, JavaModule javaModule, boolean b, Throwable throwable) {
-
-//        System.out.println("错误：" + s);
-//        System.out.println(throwable.getMessage());
+        System.out.println("错误：" + s);
+        System.out.println(throwable.getMessage());
     }
 
     @Override

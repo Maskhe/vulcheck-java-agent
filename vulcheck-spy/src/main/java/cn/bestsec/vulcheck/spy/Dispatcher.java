@@ -3,6 +3,7 @@ package cn.bestsec.vulcheck.spy;
 import net.bytebuddy.description.method.MethodDescription;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 
 
 /**
@@ -20,6 +21,8 @@ public interface Dispatcher {
      * 进入无返回值的propagator节点时的增强代码
      */
     void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
+
+    void enterPropagatorWithoutThis(Object[] args);
 
     void enterSink(Class<?> cls, Object caller, Executable executable, Object[] args);
 

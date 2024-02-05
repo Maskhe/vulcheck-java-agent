@@ -7,6 +7,7 @@ import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -24,10 +25,12 @@ public class PropagatorAdvice {
     }
 
     @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Origin("#m") String methodName,
+    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args,
                             @Advice.Origin("#t") Class<?> declaringType,
                             @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
+        System.out.println(exe.getName());
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
+
         dispatcher.exitPropagator(cls, caller, exe, args, ret);
     }
 }

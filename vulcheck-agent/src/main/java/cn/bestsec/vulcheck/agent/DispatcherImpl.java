@@ -2,10 +2,11 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.enums.NodeType;
 import cn.bestsec.vulcheck.spy.Dispatcher;
+//import com.sun.deploy.util.StringUtils;
 import net.bytebuddy.description.method.MethodDescription;
 
-//import javax.xml.soap.Node;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -102,12 +103,20 @@ public class DispatcherImpl implements Dispatcher {
         vulCheckContext.leaveAgent();
     }
     public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!vulCheckContext.isEnterHttp() || vulCheckContext.agentDepth > 0) {
-            return;
-        }
-        vulCheckContext.enterAgent();
+//        if (!vulCheckContext.isEnterHttp() || vulCheckContext.agentDepth > 0) {
+//            return;
+//        }
+//        vulCheckContext.enterAgent();
+//        System.out.println("a" + "b");
         String clsName = cls.getName();
         String methodName = exe.getName();
+//        String paramTypes = "";
+//        Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.toList());
+//        StringUtils.join(exe.getParameterTypes())
+//        for (Class<?> clazz : exe.getParameterTypes()) {
+//
+//        }
+//        exe.getParameterTypes();
         String uniqueMethod;
         if (clsName.equals(methodName)){
             uniqueMethod = clsName + ".<init>";
@@ -120,7 +129,7 @@ public class DispatcherImpl implements Dispatcher {
         String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
         HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
         parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool, uniqueMethod);
-        vulCheckContext.leaveAgent();
+//        vulCheckContext.leaveAgent();
     }
     @Override
     public void enterHttp() {
@@ -153,11 +162,12 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
-            vulCheckContext.propagatorDepth --;
-            return;
-        }
-        vulCheckContext.propagatorDepth --;
+
+//        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+//            vulCheckContext.propagatorDepth --;
+//            return;
+//        }
+//        vulCheckContext.propagatorDepth --;
         handleTaint("propagator", cls, caller, exe, args, ret);
     }
 
@@ -165,6 +175,11 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
         vulCheckContext.propagatorDepth ++;
+    }
+
+    @Override
+    public void enterPropagatorWithoutThis(Object[] args) {
+//        System.out.println("123");
     }
 
     @Override
@@ -179,10 +194,10 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        vulCheckContext.sinkDepth ++;
-        if (!vulCheckContext.isValidSink()){
-            return;
-        }
+//        vulCheckContext.sinkDepth ++;
+//        if (!vulCheckContext.isValidSink()){
+//            return;
+//        }
         System.out.println("进入sink节点-------------------------------------");
         handleTaint("sink", cls, caller, exe, args, null);
     }

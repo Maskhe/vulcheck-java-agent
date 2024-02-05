@@ -5,6 +5,7 @@ import lombok.Data;
 
 /**
  * hook规则实体类
+ * @author hjx
  */
 @Data
 public class HookRule {
@@ -16,6 +17,8 @@ public class HookRule {
     // 方法名
     @SerializedName("method_name")
     String methodName;
+    // 方法签名
+    String signature;
     // 方法描述符
     String descriptor;
     // 规则类型: source | propagator | sink | filter
@@ -29,14 +32,26 @@ public class HookRule {
     // 危险出参位置
     @SerializedName("out_param")
     String out;
+    // 继承类型:
+    String inherit;
+    // 事件类型：sql注入、ssrf、字符串操作等
+    @SerializedName("event_type")
+    String eventType;
+    // 当type为SANITIZER时生效，指定当前sanitizer可以对哪些漏洞类型进行免疫
+    @SerializedName("immune_vul_type")
+    String immuneVulTypes;
 
-    public HookRule(String id, String className, String methodName, String descriptor, String type, String in, String out) {
+    public HookRule(String id, String className, String methodName, String signature, String descriptor, String type, String in, String out, String inherit, String eventType, String immuneVulTypes) {
         this.id = id;
         this.className = className;
         this.methodName = methodName;
+        this.signature = signature;
         this.descriptor = descriptor;
         this.type = type;
         this.in = in;
         this.out = out;
+        this.inherit = inherit;
+        this.eventType = eventType;
+        this.immuneVulTypes = immuneVulTypes;
     }
 }
