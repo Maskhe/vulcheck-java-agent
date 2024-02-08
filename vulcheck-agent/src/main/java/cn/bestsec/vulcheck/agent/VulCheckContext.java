@@ -25,8 +25,8 @@ public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookPoints;
     private InheritableThreadLocal<HashSet<Object>> taintPool;
-    private boolean enterHttp;
-    private boolean exitHttp;
+    private boolean enterEntry;
+    private boolean exitEntry;
     public int agentDepth = 0;
     public int sinkDepth = 0;
     public int propagatorDepth = 0;

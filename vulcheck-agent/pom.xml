@@ -45,6 +45,16 @@
             <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-api</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tinylog</groupId>
+            <artifactId>tinylog-impl</artifactId>
+            <version>2.7.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -73,6 +83,8 @@
                         <includes>
                             <include>net.bytebuddy:byte-buddy:jar:</include>
                             <include>com.google.code.gson:gson:jar:</include>
+                            <include>org.tinylog:tinylog-api:jar:</include>
+                            <include>org.tinylog:tinylog-impl:jar:</include>
 <!--                            <include>org.slf4j:slf4j-api:jar:</include>-->
 <!--                            <include>ch.qos.logback:logback-core:jar:</include>-->
 <!--                            <include>ch.qos.logback:logback-classic:jar:</include>-->

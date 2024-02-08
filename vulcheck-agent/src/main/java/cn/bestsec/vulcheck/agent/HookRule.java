@@ -40,8 +40,11 @@ public class HookRule {
     // 当type为SANITIZER时生效，指定当前sanitizer可以对哪些漏洞类型进行免疫
     @SerializedName("immune_vul_type")
     String immuneVulTypes;
+    // 是否跟踪
+    String tracked;
 
-    public HookRule(String id, String className, String methodName, String signature, String descriptor, String type, String in, String out, String inherit, String eventType, String immuneVulTypes) {
+    public HookRule(String id, String className, String methodName, String signature, String descriptor, String type,
+                    String in, String out, String inherit, String eventType, String immuneVulTypes, String tracked) {
         this.id = id;
         this.className = className;
         this.methodName = methodName;
@@ -53,5 +56,19 @@ public class HookRule {
         this.inherit = inherit;
         this.eventType = eventType;
         this.immuneVulTypes = immuneVulTypes;
+        this.tracked = tracked;
     }
+
+    class Parameter {
+        private int index;
+        private String badValueRegex;
+        private boolean tracked;
+
+        public Parameter(int index, String badValueRegex, boolean tracked) {
+            this.index = index;
+            this.badValueRegex = badValueRegex;
+            this.tracked = tracked;
+        }
+    }
+
 }

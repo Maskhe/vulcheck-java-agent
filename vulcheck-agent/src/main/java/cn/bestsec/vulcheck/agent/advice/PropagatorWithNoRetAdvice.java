@@ -1,4 +1,4 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.advice;
 
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;

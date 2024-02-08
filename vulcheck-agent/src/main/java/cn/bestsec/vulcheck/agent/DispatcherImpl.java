@@ -2,8 +2,8 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.enums.NodeType;
 import cn.bestsec.vulcheck.spy.Dispatcher;
-//import com.sun.deploy.util.StringUtils;
 import net.bytebuddy.description.method.MethodDescription;
+import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 /**
  * 分发器实现类
@@ -103,42 +104,36 @@ public class DispatcherImpl implements Dispatcher {
         vulCheckContext.leaveAgent();
     }
     public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-//        if (!vulCheckContext.isEnterHttp() || vulCheckContext.agentDepth > 0) {
-//            return;
-//        }
-//        vulCheckContext.enterAgent();
-//        System.out.println("a" + "b");
+        if (!vulCheckContext.isEnterEntry() || vulCheckContext.agentDepth > 0) {
+            return;
+        }
+        vulCheckContext.enterAgent();
+        System.out.println("a" + "b");
         String clsName = cls.getName();
         String methodName = exe.getName();
-//        String paramTypes = "";
-//        Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.toList());
-//        StringUtils.join(exe.getParameterTypes())
-//        for (Class<?> clazz : exe.getParameterTypes()) {
-//
-//        }
-//        exe.getParameterTypes();
+        String paramTypes = "";
+        paramTypes = Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.joining(", "));
         String uniqueMethod;
-        if (clsName.equals(methodName)){
-            uniqueMethod = clsName + ".<init>";
-        } else {
-            uniqueMethod = cls.getName() + "." + exe.getName();
+        if (clsName.equals(methodName)) {
+            methodName = "<init>";
         }
-
+        uniqueMethod = String.format("%s.%s(%s)", clsName, methodName, paramTypes);
+        Logger.info(uniqueMethod);
         HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
         String inParam = matchedHookPoints.get(uniqueMethod).getIn().toLowerCase();
         String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
         HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
         parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool, uniqueMethod);
-//        vulCheckContext.leaveAgent();
+        vulCheckContext.leaveAgent();
     }
     @Override
-    public void enterHttp() {
-        vulCheckContext.setEnterHttp(true);
+    public void enterEntry() {
+        vulCheckContext.setEnterEntry(true);
     }
 
     @Override
-    public void exitHttp() {
-        vulCheckContext.setEnterHttp(false);
+    public void exitEntry() {
+        vulCheckContext.setEnterEntry(false);
     }
 
     @Override
@@ -162,12 +157,11 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-
 //        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
 //            vulCheckContext.propagatorDepth --;
 //            return;
 //        }
-//        vulCheckContext.propagatorDepth --;
+        vulCheckContext.propagatorDepth --;
         handleTaint("propagator", cls, caller, exe, args, ret);
     }
 

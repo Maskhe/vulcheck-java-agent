@@ -1,4 +1,4 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.advice;
 
 import net.bytebuddy.asm.Advice;
 

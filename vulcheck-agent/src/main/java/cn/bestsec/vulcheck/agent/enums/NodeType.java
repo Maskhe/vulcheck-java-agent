@@ -6,7 +6,7 @@ package cn.bestsec.vulcheck.agent.enums;
  * @since 2024/1/12
  */
 public enum NodeType {
-    ENTRY("http", 1),
+    ENTRY("entry", 1),
     SOURCE("source", 2),
     PROPAGATOR("propagator", 3),
     SINK("sink", 4),

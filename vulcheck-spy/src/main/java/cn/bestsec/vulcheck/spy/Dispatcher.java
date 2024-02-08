@@ -12,8 +12,8 @@ import java.lang.reflect.Method;
  * @since 2023/11/20
  */
 public interface Dispatcher {
-    void enterHttp();
-    void exitHttp();
+    void enterEntry();
+    void exitEntry();
     void enterSource();
     void enterPropagator();
 

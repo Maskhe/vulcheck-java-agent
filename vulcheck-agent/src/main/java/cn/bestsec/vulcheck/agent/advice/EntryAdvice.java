@@ -1,4 +1,4 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.advice;
 
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
@@ -12,12 +12,12 @@ public class EntryAdvice {
     @Advice.OnMethodEnter
     public static void enter() {
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.enterHttp();
+        dispatcher.enterEntry();
     }
 
     @Advice.OnMethodExit
     public static void exit() {
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.exitHttp();
+        dispatcher.exitEntry();
     }
 }
