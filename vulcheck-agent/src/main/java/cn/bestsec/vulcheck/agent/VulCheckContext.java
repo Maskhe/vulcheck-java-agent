@@ -19,12 +19,12 @@ import java.util.*;
  * @author tntaxin
  * @since 2023/11/17
  */
-
 @Data
 public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookPoints;
     private InheritableThreadLocal<HashSet<Object>> taintPool;
+    private boolean debug = false;
     private boolean enterEntry;
     private boolean exitEntry;
     public int agentDepth = 0;
@@ -102,5 +102,13 @@ public class VulCheckContext {
 
     public boolean isValidSource() {
         return this.sourceDepth == 1;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public boolean isDebug() {
+        return this.debug;
     }
 }

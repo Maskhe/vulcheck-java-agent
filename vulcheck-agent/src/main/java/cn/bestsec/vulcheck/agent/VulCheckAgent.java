@@ -20,14 +20,35 @@ import org.tinylog.Logger;
 
 
 /**
- * VulCheck入口
+ * VulCheck入口类
  * @author tntaxin
  * @since 2023/11/15
  */
 public class VulCheckAgent {
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    private static final String SPY_FILE = "vulcheck-spy.jar";
+
+    /**
+     * 获取agent jar包的临时存放路径
+     * @return
+     */
+    public static String getTempPath() {
+        if (OS_NAME.contains("windows")) {
+            return System.getenv("USERPROFILE") + File.separator + "vulcheck_jars";
+        }
+
+        return "/tmp/vulcheck_jars";
+    }
+
+    public static void openDebugLog() throws IOException {
+        Properties properties = new Properties();
+        InputStream tinylogProperties = VulCheckAgent.class.getClassLoader().getResourceAsStream("tinylog.properties");
+        properties.load(tinylogProperties);
+        properties.setProperty("level", "DEBUG");
+    }
     public static void premain(String args, Instrumentation inst) throws IOException {
         Logger.info("Agent Starting...");
-        String spyJarPath = "C:\\Users\\hjx\\tmp\\vulcheck-spy.jar";
+        String spyJarPath = getTempPath() + File.separator + SPY_FILE;
         FileUtils.extractJars(spyJarPath);
         // vulcheck-spy.jar使用BootStrapClassLoader加载
         JarFile jarFile = new JarFile(spyJarPath);
@@ -82,7 +103,6 @@ public class VulCheckAgent {
         } else if (hookRule.getType().equalsIgnoreCase(NodeType.PROPAGATOR.getName())) {
             return Advice.to(PropagatorAdvice.class).on(elementMatcher);
         } else if (hookRule.getType().equalsIgnoreCase(NodeType.SANITIZER.getName())){
-            // todo: 补充sanitizer逻辑
             return Advice.to(SanitizerAdvice.class).on(elementMatcher);
         } else {
             return Advice.to(SinkAdvice.class).on(elementMatcher);
