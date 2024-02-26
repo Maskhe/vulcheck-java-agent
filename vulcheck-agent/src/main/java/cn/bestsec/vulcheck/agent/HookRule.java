@@ -1,11 +1,19 @@
 package cn.bestsec.vulcheck.agent;
+import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
  * hook规则实体类
  * @author hjx
+ * @since 2023/12/10
  */
 @Data
 public class HookRule {
@@ -42,6 +50,10 @@ public class HookRule {
     String immuneVulTypes;
     // 是否跟踪
     String tracked;
+    // 污点来源位置
+    TaintPositions taintSources;
+    // 污点目标位置
+    TaintPositions taintTargets;
 
     public HookRule(String id, String className, String methodName, String signature, String descriptor, String type,
                     String in, String out, String inherit, String eventType, String immuneVulTypes, String tracked) {
@@ -59,16 +71,60 @@ public class HookRule {
         this.tracked = tracked;
     }
 
-    class Parameter {
-        private int index;
-        private String badValueRegex;
-        private boolean tracked;
+    public TaintPositions parsePositions(String positions) {
 
-        public Parameter(int index, String badValueRegex, boolean tracked) {
-            this.index = index;
-            this.badValueRegex = badValueRegex;
-            this.tracked = tracked;
+        if(positions.contains("{")) {
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            JsonDeserializer<TaintPositions> jsonDeserializer = new TaintPositionsDeserializer();
+            gsonBuilder.registerTypeAdapter(TaintPositions.class, jsonDeserializer);
+            Gson gson = gsonBuilder.create();
+            return gson.fromJson(positions, TaintPositions.class);
+        } else {
+            return parseSimplePositions(positions);
         }
     }
 
+    public static TaintPositions parseSimplePositions(String positions) {
+        HashMap<String, String> relations = new HashMap<String, String>() {
+            {
+                put("&", "AND");
+                put("|", "OR");
+            }
+        };
+        TaintPositions taintPositions = new TaintPositions();
+
+        String[] positionArray = new String[]{};
+        if (positions.contains("&")) {
+            taintPositions.setRelation("AND");
+            positionArray = positions.split("&");
+        } else if (positions.contains("|")) {
+            taintPositions.setRelation("OR");
+            positionArray = positions.split("\\|");
+        } else {
+            taintPositions.addPosition(parseSinglePosition(positions));
+            return taintPositions;
+        }
+        for (String position : positionArray) {
+            TaintPosition taintPosition = parseSinglePosition(position);
+            taintPositions.addPosition(taintPosition);
+        }
+        return taintPositions;
+    }
+    public static TaintPosition parseSinglePosition(String position) {
+        String positionType = position.substring(0,1).toUpperCase();
+        TaintPosition taintPosition = new TaintPosition();
+        switch(positionType){
+            case "P":
+                taintPosition.setPositionType(PositionTypeEnum.PARAM);
+                taintPosition.setIndex(Integer.parseInt(position.substring(1,2)));
+                break;
+            case "R":
+                taintPosition.setPositionType(PositionTypeEnum.RET);
+                break;
+            case "O":
+                taintPosition.setPositionType(PositionTypeEnum.CALLER);
+                break;
+        }
+        return taintPosition;
+    }
 }

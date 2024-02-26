@@ -29,8 +29,8 @@ public class VulCheckAgent {
     private static final String SPY_FILE = "vulcheck-spy.jar";
 
     /**
-     * 获取agent jar包的临时存放路径
-     * @return
+     * 根据不同操作系统获取agent jar包的临时存放路径
+     * @return temp path
      */
     public static String getTempPath() {
         if (OS_NAME.contains("windows")) {
@@ -40,12 +40,6 @@ public class VulCheckAgent {
         return "/tmp/vulcheck_jars";
     }
 
-    public static void openDebugLog() throws IOException {
-        Properties properties = new Properties();
-        InputStream tinylogProperties = VulCheckAgent.class.getClassLoader().getResourceAsStream("tinylog.properties");
-        properties.load(tinylogProperties);
-        properties.setProperty("level", "DEBUG");
-    }
     public static void premain(String args, Instrumentation inst) throws IOException {
         Logger.info("Agent Starting...");
         String spyJarPath = getTempPath() + File.separator + SPY_FILE;
