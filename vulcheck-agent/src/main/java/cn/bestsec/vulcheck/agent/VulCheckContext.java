@@ -42,6 +42,7 @@ public class VulCheckContext {
 
     private static class VulCheckContextHolder{
         private static HashMap<String, ArrayList<HookRule>> getHookRules(){
+
             Gson gson = new Gson();
             // 读取服务端hook规则
             String json = "";

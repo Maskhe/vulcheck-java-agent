@@ -59,7 +59,7 @@ public class TaintPositionTest extends TestCase {
         assertEquals(taintPositions, gson.fromJson(json, TaintPositions.class));
     }
 
-    public void testParseSimplePositions() {
+    public void testParseSimplePositions1() {
         TaintPositions taintPositions = new TaintPositions();
         taintPositions.setRelation("AND");
         TaintPosition taintPosition1 = new TaintPosition();
@@ -92,5 +92,72 @@ public class TaintPositionTest extends TestCase {
         taintPositions2.addPosition(taintPosition4);
 
         assertEquals(taintPositions2, HookRule.parseSimplePositions("P1|P2"));
+    }
+
+    public void testParseSimplePosition2() {
+        TaintPositions taintPositions = new TaintPositions();
+        taintPositions.setRelation("AND");
+        TaintPosition taintPosition1 = new TaintPosition();
+        taintPosition1.setPositionType(PositionTypeEnum.PARAM);
+        taintPosition1.setIndex(1);
+        TaintPosition taintPosition2 = new TaintPosition();
+        taintPosition2.setPositionType(PositionTypeEnum.CALLER);
+        taintPosition2.setIndex(0);
+        taintPositions.addPosition(taintPosition1);
+        taintPositions.addPosition(taintPosition2);
+
+        assertEquals(taintPositions, HookRule.parseSimplePositions("P1&O"));
+    }
+
+    public void testParseSimplePosition3() {
+        TaintPositions taintPositions = new TaintPositions();
+        taintPositions.setRelation("AND");
+        TaintPosition taintPosition1 = new TaintPosition();
+        taintPosition1.setPositionType(PositionTypeEnum.PARAM);
+        taintPosition1.setIndex(1);
+        taintPositions.addPosition(taintPosition1);
+
+        assertEquals(taintPositions, HookRule.parseSimplePositions("P1"));
+    }
+
+    public void testParseSimplePosition4() {
+        TaintPositions taintPositions = new TaintPositions();
+        taintPositions.setRelation("AND");
+        TaintPosition taintPosition1 = new TaintPosition();
+        taintPosition1.setPositionType(PositionTypeEnum.RET);
+        taintPosition1.setIndex(0);
+        taintPositions.addPosition(taintPosition1);
+
+        assertEquals(taintPositions, HookRule.parseSimplePositions("R"));
+    }
+
+    public void testParseSimplePosition5() {
+        TaintPositions taintPositions = new TaintPositions();
+        taintPositions.setRelation("AND");
+        TaintPosition taintPosition1 = new TaintPosition();
+        taintPosition1.setPositionType(PositionTypeEnum.RET);
+        taintPosition1.setIndex(0);
+        TaintPosition taintPosition2 = new TaintPosition();
+        taintPosition2.setPositionType(PositionTypeEnum.CALLER);
+        taintPosition2.setIndex(0);
+        taintPositions.addPosition(taintPosition1);
+        taintPositions.addPosition(taintPosition2);
+
+        assertEquals(taintPositions, HookRule.parseSimplePositions("R&O"));
+    }
+
+    public void testParseSimplePosition6() {
+        TaintPositions taintPositions = new TaintPositions();
+        taintPositions.setRelation("OR");
+        TaintPosition taintPosition1 = new TaintPosition();
+        taintPosition1.setPositionType(PositionTypeEnum.CALLER);
+        taintPosition1.setIndex(0);
+        TaintPosition taintPosition2 = new TaintPosition();
+        taintPosition2.setPositionType(PositionTypeEnum.PARAM);
+        taintPosition2.setIndex(1);
+        taintPositions.addPosition(taintPosition1);
+        taintPositions.addPosition(taintPosition2);
+
+        assertEquals(taintPositions, HookRule.parseSimplePositions("O|P1"));
     }
 }

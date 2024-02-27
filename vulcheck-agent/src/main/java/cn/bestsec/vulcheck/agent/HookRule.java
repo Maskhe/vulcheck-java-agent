@@ -71,29 +71,27 @@ public class HookRule {
         this.tracked = tracked;
     }
 
-    public TaintPositions parsePositions(String positions) {
-
+    public static TaintPositions parsePositions(String positions) {
+        if (positions.isEmpty()) {
+            return null;
+        }
         if(positions.contains("{")) {
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            JsonDeserializer<TaintPositions> jsonDeserializer = new TaintPositionsDeserializer();
-            gsonBuilder.registerTypeAdapter(TaintPositions.class, jsonDeserializer);
-            Gson gson = gsonBuilder.create();
-            return gson.fromJson(positions, TaintPositions.class);
+            return parseComplexPositions(positions);
         } else {
             return parseSimplePositions(positions);
         }
     }
 
+    public static TaintPositions parseComplexPositions(String positions) {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        JsonDeserializer<TaintPositions> jsonDeserializer = new TaintPositionsDeserializer();
+        gsonBuilder.registerTypeAdapter(TaintPositions.class, jsonDeserializer);
+        Gson gson = gsonBuilder.create();
+        return gson.fromJson(positions, TaintPositions.class);
+    }
     public static TaintPositions parseSimplePositions(String positions) {
-        HashMap<String, String> relations = new HashMap<String, String>() {
-            {
-                put("&", "AND");
-                put("|", "OR");
-            }
-        };
         TaintPositions taintPositions = new TaintPositions();
-
-        String[] positionArray = new String[]{};
+        String[] positionArray;
         if (positions.contains("&")) {
             taintPositions.setRelation("AND");
             positionArray = positions.split("&");

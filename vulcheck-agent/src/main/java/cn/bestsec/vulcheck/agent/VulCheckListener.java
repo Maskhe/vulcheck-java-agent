@@ -27,7 +27,7 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onIgnored(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, boolean b) {
-        Logger.info("忽略：" + typeDescription.toString() + ", 类加载器" + classLoader);
+//        Logger.info("忽略：" + typeDescription.toString() + ", 类加载器" + classLoader);
     }
 
     @Override
