@@ -5,15 +5,15 @@ package cn.bestsec.vulcheck.agent.enums;
  * @author hjx
  * @since 2024/1/12
  */
-public enum NodeType {
-    ENTRY("entry", 1),
-    SOURCE("source", 2),
-    PROPAGATOR("propagator", 3),
-    SINK("sink", 4),
-    SANITIZER("sanitizer", 5);
+public enum NodeTypeEnum {
+    ENTRY("ENTRY", 1),
+    SOURCE("SOURCE", 2),
+    PROPAGATOR("PROPAGATOR", 3),
+    SINK("SINK", 4),
+    SANITIZER("SANITIZER", 5);
     private String name;
     private int index;
-    NodeType(String name, int index){
+    NodeTypeEnum(String name, int index){
         this.name = name;
         this.index = index;
     }
@@ -26,8 +26,8 @@ public enum NodeType {
         return this.index;
     }
 
-    public static NodeType getByName(String name) {
-        for (NodeType nodeType: NodeType.values()) {
+    public static NodeTypeEnum getByName(String name) {
+        for (NodeTypeEnum nodeType: NodeTypeEnum.values()) {
             if (nodeType.getName().equals(name)) {
                 return nodeType;
             }
@@ -35,8 +35,8 @@ public enum NodeType {
         return null;
     }
 
-    public static NodeType getByIndex(int index) {
-        for (NodeType nodeType : NodeType.values()) {
+    public static NodeTypeEnum getByIndex(int index) {
+        for (NodeTypeEnum nodeType : NodeTypeEnum.values()) {
             if (nodeType.getIndex() == index) {
                 return nodeType;
             }

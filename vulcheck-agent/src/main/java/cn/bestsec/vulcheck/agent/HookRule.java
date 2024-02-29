@@ -1,14 +1,10 @@
 package cn.bestsec.vulcheck.agent;
+import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
+import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -32,7 +28,7 @@ public class HookRule {
     String descriptor;
     // 规则类型: source | propagator | sink | filter
     @SerializedName("rule_type")
-    String type;
+    NodeTypeEnum type;
     // 危险入参位置：Pn(参数，第几个形参是污点n的值就为数字几，例如，第一个参数是污点危险入参就是P1，第二个参数是污点，危险入参就是P2) | O(调用当前方法的对象) | R(当前方法返回值)；
     // 出参入参的位置都可能是多个，例如入参为O&P1,表示当调用当前方法的对象和第一个参数都可控时，才会污染出参。出参的位置如果是O&P2，表示调用当前方法的对象及第二个参数都被污染了，都需要放入污点池。
     // 入参的位置为O|P1时表示当调用当前方法的对象或者第一个参数是污点时，就会污染出参。
@@ -42,7 +38,7 @@ public class HookRule {
     @SerializedName("out_param")
     String out;
     // 继承类型:
-    String inherit;
+    InheritTypeEnum inherit;
     // 事件类型：sql注入、ssrf、字符串操作等
     @SerializedName("event_type")
     String eventType;
@@ -56,8 +52,8 @@ public class HookRule {
     // 污点目标位置
     TaintPositions taintTargets;
 
-    public HookRule(String id, String className, String methodName, String signature, String descriptor, String type,
-                    String in, String out, String inherit, String eventType, String immuneVulTypes, String tracked) {
+    public HookRule(String id, String className, String methodName, String signature, String descriptor, NodeTypeEnum type,
+                    String in, String out, InheritTypeEnum inherit, String eventType, String immuneVulTypes, String tracked) {
         this.id = id;
         this.className = className;
         this.methodName = methodName;

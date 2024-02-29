@@ -19,7 +19,6 @@ import java.util.HashSet;
 public class SourceAdvice {
     @Advice.OnMethodEnter
     public static void enter(){
-        System.out.println("进入source节点");
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.enterSource();
     }
@@ -28,7 +27,6 @@ public class SourceAdvice {
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.exitSource(cls, caller, exe, args, ret);
-        System.out.println("退出source节点");
     }
 
 }

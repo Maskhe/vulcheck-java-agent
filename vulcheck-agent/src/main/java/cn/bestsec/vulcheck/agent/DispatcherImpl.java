@@ -1,13 +1,10 @@
 package cn.bestsec.vulcheck.agent;
 
-import cn.bestsec.vulcheck.agent.enums.NodeType;
+import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import cn.bestsec.vulcheck.spy.Dispatcher;
-import net.bytebuddy.description.method.MethodDescription;
 import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +22,7 @@ public class DispatcherImpl implements Dispatcher {
         this.vulCheckContext = vulCheckContext;
     }
 
-    private void parseArgPostion(String inParam, String outParam,Object caller, Object[] args, Object ret, NodeType nodeType, HashSet<Object> taintPool, String uniqueMethod) {
+    private void parseArgPostion(String inParam, String outParam, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, String uniqueMethod) {
         vulCheckContext.enterAgent();
         boolean isHitTaintPool = false;
         if (inParam.isEmpty()) {
@@ -38,7 +35,7 @@ public class DispatcherImpl implements Dispatcher {
                 if (taintValue instanceof Object[]) {
                     for (Object taintValueItem : (Object[])taintValue) {
                         if (taintPool.contains(System.identityHashCode(taintValueItem))) {
-                            if (nodeType == NodeType.SINK) {
+                            if (nodeType == NodeTypeEnum.SINK) {
                                 System.out.println("当前污点值：" + taintValue);
                                 System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
                             }
@@ -47,7 +44,7 @@ public class DispatcherImpl implements Dispatcher {
                     }
                 }
                 if (taintPool.contains(System.identityHashCode(taintValue))) {
-                    if (nodeType == NodeType.SINK) {
+                    if (nodeType == NodeTypeEnum.SINK) {
                         System.out.println("当前污点值：" + taintValue);
                         System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
                     }
@@ -60,13 +57,13 @@ public class DispatcherImpl implements Dispatcher {
                 isHitTaintPool = true;
             }
         }
-        if (isHitTaintPool || nodeType == NodeType.SOURCE) {
+        if (isHitTaintPool || nodeType == NodeTypeEnum.SOURCE) {
             System.out.println(uniqueMethod);
         }
-        if (nodeType == NodeType.SINK && isHitTaintPool) {
+        if (nodeType == NodeTypeEnum.SINK && isHitTaintPool) {
             System.out.println("发现漏洞！");
         }
-        if (nodeType == NodeType.SOURCE || (isHitTaintPool && nodeType == NodeType.PROPAGATOR)) {
+        if (nodeType == NodeTypeEnum.SOURCE || (isHitTaintPool && nodeType == NodeTypeEnum.PROPAGATOR)) {
             // todo:出参如果是复合类型，也需要拆分
             if (outParam.contains("&")) {
                 String[] params = outParam.split("&");
@@ -108,7 +105,6 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         vulCheckContext.enterAgent();
-        System.out.println("a" + "b");
         String clsName = cls.getName();
         String methodName = exe.getName();
         String paramTypes = "";
@@ -119,11 +115,12 @@ public class DispatcherImpl implements Dispatcher {
         }
         uniqueMethod = String.format("%s.%s(%s)", clsName, methodName, paramTypes);
         Logger.info(uniqueMethod);
-        HashMap<String, HookRule> matchedHookPoints = vulCheckContext.getMatchedHookPoints();
-        String inParam = matchedHookPoints.get(uniqueMethod).getIn().toLowerCase();
-        String outParam = matchedHookPoints.get(uniqueMethod).getOut().toLowerCase();
-        HashSet<Object> taintPool =  vulCheckContext.getTaintPool().get();
-        parseArgPostion(inParam, outParam, caller, args, ret, NodeType.getByName(nodeType), taintPool, uniqueMethod);
+        HashMap<String, HookRule> matchedHookNodes = vulCheckContext.getMatchedHookNodes();
+        // todo: 污点入参的处理逻辑需要大更改
+        String inParam = matchedHookNodes.get(uniqueMethod).getIn().toLowerCase();
+        String outParam = matchedHookNodes.get(uniqueMethod).getOut().toLowerCase();
+        HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
+        parseArgPostion(inParam, outParam, caller, args, ret, NodeTypeEnum.getByName(nodeType), taintPool, uniqueMethod);
         vulCheckContext.leaveAgent();
     }
     @Override
@@ -135,11 +132,12 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void exitEntry() {
         vulCheckContext.setEnterEntry(false);
-        Logger.debug("推出entry节点");
+        Logger.debug("退出entry节点");
     }
 
     @Override
     public void enterSource() {
+        Logger.debug("进入source节点");
         vulCheckContext.sourceDepth ++;
     }
 
@@ -147,10 +145,12 @@ public class DispatcherImpl implements Dispatcher {
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         if (!vulCheckContext.isValidSource()) {
             vulCheckContext.sourceDepth --;
+            Logger.debug("嵌套source节点，不执行污点捕获，直接退出");
             return;
         }
         vulCheckContext.sourceDepth --;
         handleTaint("source", cls, caller, exe, args, ret);
+        Logger.debug("退出source节点");
     }
     @Override
     public void enterPropagator() {

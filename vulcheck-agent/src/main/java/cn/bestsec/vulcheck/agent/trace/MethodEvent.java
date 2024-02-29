@@ -1,7 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
-import cn.bestsec.vulcheck.agent.HookRule;
-import cn.bestsec.vulcheck.agent.enums.NodeType;
+import cn.bestsec.vulcheck.agent.HookRule;import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 
 import java.util.ArrayList;
 
@@ -16,7 +15,7 @@ public class MethodEvent implements Span  {
     /**
      * 方法类型：source、propagator等
      */
-    private NodeType methodType;
+    private NodeTypeEnum methodType;
     /**
      * 事件类型
      */
@@ -62,11 +61,11 @@ public class MethodEvent implements Span  {
     }
 
     public boolean isSink() {
-        return this.methodType.equals(NodeType.SINK);
+        return this.methodType.equals(NodeTypeEnum.SINK);
     }
 
     public boolean isSource() {
-        return this.methodType.equals(NodeType.SOURCE);
+        return this.methodType.equals(NodeTypeEnum.SOURCE);
     }
 
     public MethodEvent setSourceValues(ArrayList<Object> sourceValues) {

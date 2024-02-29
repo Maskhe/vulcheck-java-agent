@@ -2,7 +2,7 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.advice.*;
 import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
-import cn.bestsec.vulcheck.agent.enums.NodeType;
+import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.asm.AsmVisitorWrapper;
@@ -65,7 +65,7 @@ public class VulCheckAgent {
                     builder = builder.visit(buildMethodMatchers(hookRule, typeDescription));
                     return builder;
                 };
-                if (hookRule.inherit.equalsIgnoreCase(InheritTypeEnum.ALL.getName()) || hookRule.inherit.equalsIgnoreCase(InheritTypeEnum.SUBCLASSES.getName())) {
+                if (hookRule.inherit == InheritTypeEnum.ALL || hookRule.inherit == InheritTypeEnum.SUBCLASSES) {
                     agentBuilder = agentBuilder.type(ElementMatchers.hasSuperType(ElementMatchers.named(className))).transform(transformer);
                 } else {
                     agentBuilder = agentBuilder.type(ElementMatchers.named(className)).transform(transformer);
@@ -87,19 +87,22 @@ public class VulCheckAgent {
         }else {
             elementMatcher = ElementMatchers.isMethod().and(ElementMatchers.named(methodName));
         }
-        if (hookRule.getType().equalsIgnoreCase(NodeType.ENTRY.getName())) {
-            return Advice.to(EntryAdvice.class).on(elementMatcher);
-        }else if (hookRule.getType().equalsIgnoreCase(NodeType.SOURCE.getName())) {
-            return Advice.to(SourceAdvice.class).on(elementMatcher);
-        }  else if (hookRule.getType().equalsIgnoreCase(NodeType.PROPAGATOR.getName()) && !hookRule.getIn().contains("O") && !hookRule.getOut().contains("O")) {
-            return Advice.to(PropagatorWithOutThisAdvice.class).on(elementMatcher);
-            // todo: 有没有返回值都可以通过 @Advice.Return获取？
-        } else if (hookRule.getType().equalsIgnoreCase(NodeType.PROPAGATOR.getName())) {
-            return Advice.to(PropagatorAdvice.class).on(elementMatcher);
-        } else if (hookRule.getType().equalsIgnoreCase(NodeType.SANITIZER.getName())){
-            return Advice.to(SanitizerAdvice.class).on(elementMatcher);
-        } else {
-            return Advice.to(SinkAdvice.class).on(elementMatcher);
+
+        switch(hookRule.type) {
+            case ENTRY:
+                return Advice.to(EntryAdvice.class).on(elementMatcher);
+            case SOURCE:
+                return Advice.to(SourceAdvice.class).on(elementMatcher);
+            case PROPAGATOR:
+                if(!hookRule.getIn().contains("O") && !hookRule.getOut().contains("O")) {
+                    return Advice.to(PropagatorWithOutThisAdvice.class).on(elementMatcher);
+                } else {
+                    return Advice.to(PropagatorAdvice.class).on(elementMatcher);
+                }
+            case SANITIZER:
+                return Advice.to(SanitizerAdvice.class).on(elementMatcher);
+            default:
+                return Advice.to(SinkAdvice.class).on(elementMatcher);
         }
     }
 

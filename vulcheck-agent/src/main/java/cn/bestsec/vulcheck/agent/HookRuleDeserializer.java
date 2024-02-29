@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
+import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;
@@ -18,10 +20,10 @@ public class HookRuleDeserializer implements JsonDeserializer<HookRule> {
         String methodName = jsonObject.get("method_name").getAsString();
         String signature = jsonObject.get("signature").getAsString();
         String descriptor = jsonObject.get("descriptor").getAsString();
-        String ruleType = jsonObject.get("rule_type").getAsString();
+        NodeTypeEnum ruleType = NodeTypeEnum.getByName(jsonObject.get("rule_type").getAsString());
         String in = jsonObject.get("in_param").getAsString();
         String out = jsonObject.get("out_param").getAsString();
-        String inherit = jsonObject.get("inherit").getAsString();
+        InheritTypeEnum inherit = InheritTypeEnum.getTypeByName(jsonObject.get("inherit").getAsString());
         String eventType = jsonObject.get("event_type").getAsString();
         String immuneVulTypes = jsonObject.get("immune_vul_type").getAsString();
         String tracked = jsonObject.get("tracked").getAsString();
