@@ -128,12 +128,14 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterEntry() {
+        Logger.debug("进入entry节点");
         vulCheckContext.setEnterEntry(true);
     }
 
     @Override
     public void exitEntry() {
         vulCheckContext.setEnterEntry(false);
+        Logger.debug("推出entry节点");
     }
 
     @Override

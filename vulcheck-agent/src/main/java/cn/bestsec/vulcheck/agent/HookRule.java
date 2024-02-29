@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent;
 import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
+import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -83,11 +84,7 @@ public class HookRule {
     }
 
     public static TaintPositions parseComplexPositions(String positions) {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        JsonDeserializer<TaintPositions> jsonDeserializer = new TaintPositionsDeserializer();
-        gsonBuilder.registerTypeAdapter(TaintPositions.class, jsonDeserializer);
-        Gson gson = gsonBuilder.create();
-        return gson.fromJson(positions, TaintPositions.class);
+        return GsonUtils.fromJson(positions, TaintPositions.class);
     }
     public static TaintPositions parseSimplePositions(String positions) {
         TaintPositions taintPositions = new TaintPositions();

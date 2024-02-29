@@ -80,7 +80,7 @@ public class VulCheckAgent {
         String methodName = hookRule.getMethodName();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         String uniqueMethod = typeDescription.getCanonicalName() + "." + signature;
-        vulCheckContext.addMatchedHookPoint(uniqueMethod, hookRule);
+        vulCheckContext.addMatchedHookNode(uniqueMethod, hookRule);
         ElementMatcher.Junction<MethodDescription> elementMatcher;
         if (methodName.equals("<init>")){
             elementMatcher = ElementMatchers.isConstructor();

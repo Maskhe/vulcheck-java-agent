@@ -22,7 +22,7 @@ public class HookRuleTest extends TestCase {
         String json = "{\"id\": 1, \"class_name\": \"org.springframework.web.method.support.HandlerMethodArgumentResolverComposite\", \"method_name\": \"resolveArgument\", \"descriptor\": \"(Lorg/springframework/core/MethodParameter;Lorg/springframework/web/method/support/ModelAndViewContainer;Lorg/springframework/web/context/request/NativeWebRequest;Lorg/springframework/web/bind/support/WebDataBinderFactory;)Ljava/lang/Object;\", \"rule_type\": \"ENTRY\", \"in_param\": \"\", \"out_param\": \"R\", \"inherit\": \"NONE\", \"in_use\": true, \"signature\": \"\", \"event_type\": \"spring\\u83b7\\u53d6\\u5165\\u53c2\", \"immune_vul_type\": \"\", \"tracked\": true}";
         HookRule hookRule = GsonUtils.fromJson(json, HookRule.class);
         System.out.println(hookRule);
-        assertEquals(1,1);
+//        assertEquals(1,1);
     }
 
     public void testHookRuleDeserializer2() {
@@ -33,6 +33,6 @@ public class HookRuleTest extends TestCase {
         Gson gson = gsonBuilder.create();
         HashMap<String, ArrayList<HookRule>> hookRule = GsonUtils.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
         System.out.println(hookRule);
-        assertEquals(1,1);
+//        assertEquals(1,1);
     }
 }

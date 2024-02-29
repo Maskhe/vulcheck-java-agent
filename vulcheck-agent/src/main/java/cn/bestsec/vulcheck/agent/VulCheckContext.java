@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -22,7 +23,7 @@ import java.util.*;
 @Data
 public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
-    private HashMap<String, HookRule> matchedHookPoints;
+    private HashMap<String, HookRule> matchedHookNodes;
     private InheritableThreadLocal<HashSet<Object>> taintPool;
     private boolean debug = false;
     private boolean enterEntry;
@@ -37,13 +38,11 @@ public class VulCheckContext {
         this.taintPool = new InheritableThreadLocal<>();
         this.taintPool.set(new HashSet<Object>());
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
-        this.matchedHookPoints = new HashMap<>();
+        this.matchedHookNodes = new HashMap<>();
     }
 
     private static class VulCheckContextHolder{
         private static HashMap<String, ArrayList<HookRule>> getHookRules(){
-
-            Gson gson = new Gson();
             // 读取服务端hook规则
             String json = "";
             URL uri = null;
@@ -68,8 +67,7 @@ public class VulCheckContext {
                 throw new RuntimeException(e);
             }
 
-            HashMap<String, ArrayList<HookRule>> hookRules = gson.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
-            return hookRules;
+            return GsonUtils.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
         }
         private static final VulCheckContext INSTANCE = new VulCheckContext(getHookRules());
     }
@@ -78,8 +76,8 @@ public class VulCheckContext {
         return VulCheckContextHolder.INSTANCE;
     }
 
-    public void addMatchedHookPoint(String methodName, HookRule hookRule){
-        this.matchedHookPoints.put(methodName, hookRule);
+    public void addMatchedHookNode(String methodName, HookRule hookRule){
+        this.matchedHookNodes.put(methodName, hookRule);
     }
 
     public boolean isEnterAgent() {
