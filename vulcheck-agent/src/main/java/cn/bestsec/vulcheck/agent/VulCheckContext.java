@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.agent.trace.TracingContextManager;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.Gson;
@@ -25,6 +26,7 @@ public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookNodes;
     private InheritableThreadLocal<HashSet<Object>> taintPool;
+    private TracingContextManager tracingContextManager;
     private boolean debug = false;
     private boolean enterEntry;
     private boolean exitEntry;
@@ -33,12 +35,14 @@ public class VulCheckContext {
     public int propagatorDepth = 0;
     public int sourceDepth = 0;
     public int filterDepth = 0;
+
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
         this.taintPool = new InheritableThreadLocal<>();
         this.taintPool.set(new HashSet<Object>());
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookNodes = new HashMap<>();
+        this.tracingContextManager = new TracingContextManager();
     }
 
     private static class VulCheckContextHolder{

@@ -1,6 +1,8 @@
 package cn.bestsec.vulcheck.agent.trace;
 
-import cn.bestsec.vulcheck.agent.HookRule;import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
+import cn.bestsec.vulcheck.agent.HookRule;
+import cn.bestsec.vulcheck.agent.VulCheckContext;
+import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 
 import java.util.ArrayList;
 
@@ -25,6 +27,9 @@ public class MethodEvent implements Span  {
      */
     private HookRule hookRule;
 
+    ArrayList<Taint> sourceTaints;
+    ArrayList<Taint> targetTaints;
+
     /**
      * 污点入参的值
      */
@@ -45,8 +50,8 @@ public class MethodEvent implements Span  {
      * 方法调用时间
      */
     Long invokeTime;
-    public MethodEvent(int spanID) {
-        this.spanID = spanID;
+    public MethodEvent() {
+        this.spanID = TracingContextManager.getContext().getCurrentSpanID();
         this.invokeTime = System.currentTimeMillis();
     }
 
@@ -85,6 +90,16 @@ public class MethodEvent implements Span  {
 
     public MethodEvent setTargetHashes(ArrayList<String> targetHashes) {
         this.targetHashes = targetHashes;
+        return this;
+    }
+
+    public MethodEvent setSourceTaints(ArrayList<Taint> taints) {
+        this.sourceTaints = taints;
+        return this;
+    }
+
+    public MethodEvent setTargetTaints(ArrayList<Taint> taints) {
+        this.targetTaints = taints;
         return this;
     }
 }

@@ -9,6 +9,11 @@ public class Taint {
         this.hash = value.hashCode();
     }
 
+    public Taint(Object value, int hash) {
+        this.value = value;
+        this.hash = hash;
+    }
+
     private final Object value;
     private final int hash;
     public String getValueString() {

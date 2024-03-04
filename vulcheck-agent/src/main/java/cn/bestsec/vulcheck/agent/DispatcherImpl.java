@@ -1,10 +1,15 @@
 package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
+import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
+import cn.bestsec.vulcheck.agent.trace.MethodEvent;
+import cn.bestsec.vulcheck.agent.trace.Taint;
+import cn.bestsec.vulcheck.agent.trace.TracingContextManager;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,105 +27,168 @@ public class DispatcherImpl implements Dispatcher {
         this.vulCheckContext = vulCheckContext;
     }
 
-    private void parseArgPostion(String inParam, String outParam, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, String uniqueMethod) {
-        vulCheckContext.enterAgent();
-        boolean isHitTaintPool = false;
-        if (inParam.isEmpty()) {
-
-        } else if (inParam.startsWith("p")){
-            inParam = inParam.replace("p", "");
-            for (String paramPosition : inParam.split(",")){
-                Object taintValue = args[Integer.parseInt(paramPosition)-1];
-                // todo: 其他复合类型检查，例如Map、List类型
-                if (taintValue instanceof Object[]) {
-                    for (Object taintValueItem : (Object[])taintValue) {
-                        if (taintPool.contains(System.identityHashCode(taintValueItem))) {
-                            if (nodeType == NodeTypeEnum.SINK) {
-                                System.out.println("当前污点值：" + taintValue);
-                                System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
-                            }
-                            isHitTaintPool = true;
-                        }
-                    }
-                }
-                if (taintPool.contains(System.identityHashCode(taintValue))) {
-                    if (nodeType == NodeTypeEnum.SINK) {
-                        System.out.println("当前污点值：" + taintValue);
-                        System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
-                    }
-
-                    isHitTaintPool = true;
-                }
-            }
-        }else if(inParam.startsWith("o")){
-            if (taintPool.contains(System.identityHashCode(caller))) {
-                isHitTaintPool = true;
-            }
+    private Object getTaintByPosition(TaintPosition position, Object caller, Object[] args, Object ret) {
+        Object taintValue;
+        switch (position.getPositionType()) {
+            case PARAM:
+                taintValue = args[position.getIndex() - 1];
+                break;
+            case CALLER:
+                taintValue = caller;
+                break;
+            case RET:
+                taintValue = ret;
+                break;
+            default:
+                taintValue = null;
+                break;
         }
-        if (isHitTaintPool || nodeType == NodeTypeEnum.SOURCE) {
-            System.out.println(uniqueMethod);
-        }
-        if (nodeType == NodeTypeEnum.SINK && isHitTaintPool) {
-            System.out.println("发现漏洞！");
-        }
-        if (nodeType == NodeTypeEnum.SOURCE || (isHitTaintPool && nodeType == NodeTypeEnum.PROPAGATOR)) {
-            // todo:出参如果是复合类型，也需要拆分
-            if (outParam.contains("&")) {
-                String[] params = outParam.split("&");
-                for (String param : params) {
-                    if (param.equals("o")) {
-                        taintPool.add(System.identityHashCode(caller));
-                    } else if (param.equals("ret") || param.equals("r")) {
-                        taintPool.add(System.identityHashCode(ret));
-                    } else if (param.startsWith("p")) {
-                        String paramPosition = param.replace("p", "");
-                        for (String position: paramPosition.split(",")) {
-                            taintPool.add(System.identityHashCode(args[Integer.parseInt(position)-1]));
-                        }
-                    }
-                }
-            } else if (outParam.equals("ret") || outParam.equalsIgnoreCase("r")) {
-                taintPool.add(System.identityHashCode(ret));
-            } else if (outParam.equalsIgnoreCase("o")) {
-                taintPool.add(System.identityHashCode(caller));
-            } else if (outParam.startsWith("p")) {
-                outParam = outParam.replace("p", "");
-                for (String paramPosition : outParam.split(",")){
-                    Object taintValue = args[Integer.parseInt(paramPosition)-1];
-                    // todo: 其他复合类型检查，例如Map、List类型
-                    if (taintValue instanceof Object[]) {
-                        for (Object taintValueItem : (Object[])taintValue) {
-                            taintPool.add(System.identityHashCode(taintValueItem));
-                        }
-                    }
-                    taintPool.add(System.identityHashCode(taintValue));
-                }
-            }
-        }
-//        System.out.println("当前污点池：" + taintPool);
-        vulCheckContext.leaveAgent();
+        return taintValue;
     }
-    public void handleTaint(String nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
+    private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool,String uniqueMethod) {
+        boolean isHitTaintPool = false;
+        ArrayList<Taint> sourceTaints = new ArrayList<>();
+        for (TaintPosition taintPosition : sources.getPositions()) {
+            Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
+            int taintHash = System.identityHashCode(taintValue);
+            if (taintPool.contains(taintHash)) {
+                sourceTaints.add(new Taint(taintValue, taintHash));
+            }
+        }
+        if (sources.getRelation().equals("AND")) {
+            isHitTaintPool = sources.getPositions().size() == sourceTaints.size();
+        } else {
+            isHitTaintPool = !sourceTaints.isEmpty();
+        }
+
+        ArrayList<Taint> targetTaints = new ArrayList<>();
+        MethodEvent methodEvent = new MethodEvent();
+        switch (nodeType) {
+            case SOURCE:
+                for (TaintPosition taintPosition : targets.getPositions()) {
+                    Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
+                    int taintHash = System.identityHashCode(taintValue);
+                    taintPool.add(taintHash);
+                    targetTaints.add(new Taint(taintValue, taintHash));
+                }
+                break;
+            case PROPAGATOR:
+            case SANITIZER:
+                if (isHitTaintPool) {
+                    // todo: 类似于集合这种复合数据类型需要拆分后再加入污点池中吗
+                    for (TaintPosition taintPosition : targets.getPositions()) {
+                        Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
+                        int taintHash = System.identityHashCode(taintValue);
+                        taintPool.add(System.identityHashCode(taintValue));
+                        targetTaints.add(new Taint(taintValue, taintHash));
+                    }
+                }
+                break;
+            case SINK:
+                if (isHitTaintPool) {
+                    Logger.info("发现漏洞！");
+                }
+                break;
+        }
+        methodEvent.setSourceTaints(sourceTaints);
+        methodEvent.setTargetTaints(targetTaints);
+        TracingContextManager.getContext().addMethodToSegment(methodEvent);
+    }
+//    private void parseArgPostion(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, String uniqueMethod) {
+//        boolean isHitTaintPool = false;
+//        if (sources == null) {
+//
+//        } else if (inParam.startsWith("p")){
+//            inParam = inParam.replace("p", "");
+//            for (String paramPosition : inParam.split(",")){
+//                Object taintValue = args[Integer.parseInt(paramPosition)-1];
+//                // todo: 其他复合类型检查，例如Map、List类型
+//                if (taintValue instanceof Object[]) {
+//                    for (Object taintValueItem : (Object[])taintValue) {
+//                        if (taintPool.contains(System.identityHashCode(taintValueItem))) {
+//                            if (nodeType == NodeTypeEnum.SINK) {
+//                                System.out.println("当前污点值：" + taintValue);
+//                                System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
+//                            }
+//                            isHitTaintPool = true;
+//                        }
+//                    }
+//                }
+//                if (taintPool.contains(System.identityHashCode(taintValue))) {
+//                    if (nodeType == NodeTypeEnum.SINK) {
+//                        System.out.println("当前污点值：" + taintValue);
+//                        System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
+//                    }
+//
+//                    isHitTaintPool = true;
+//                }
+//            }
+//        }else if(inParam.startsWith("o")){
+//            if (taintPool.contains(System.identityHashCode(caller))) {
+//                isHitTaintPool = true;
+//            }
+//        }
+//        if (isHitTaintPool || nodeType == NodeTypeEnum.SOURCE) {
+//            System.out.println(uniqueMethod);
+//        }
+//        if (nodeType == NodeTypeEnum.SINK && isHitTaintPool) {
+//            System.out.println("发现漏洞！");
+//        }
+//        if (nodeType == NodeTypeEnum.SOURCE || (isHitTaintPool && nodeType == NodeTypeEnum.PROPAGATOR)) {
+//            // todo:出参如果是复合类型，也需要拆分
+//            if (outParam.contains("&")) {
+//                String[] params = outParam.split("&");
+//                for (String param : params) {
+//                    if (param.equals("o")) {
+//                        taintPool.add(System.identityHashCode(caller));
+//                    } else if (param.equals("ret") || param.equals("r")) {
+//                        taintPool.add(System.identityHashCode(ret));
+//                    } else if (param.startsWith("p")) {
+//                        String paramPosition = param.replace("p", "");
+//                        for (String position: paramPosition.split(",")) {
+//                            taintPool.add(System.identityHashCode(args[Integer.parseInt(position)-1]));
+//                        }
+//                    }
+//                }
+//            } else if (outParam.equals("ret") || outParam.equalsIgnoreCase("r")) {
+//                taintPool.add(System.identityHashCode(ret));
+//            } else if (outParam.equalsIgnoreCase("o")) {
+//                taintPool.add(System.identityHashCode(caller));
+//            } else if (outParam.startsWith("p")) {
+//                outParam = outParam.replace("p", "");
+//                for (String paramPosition : outParam.split(",")){
+//                    Object taintValue = args[Integer.parseInt(paramPosition)-1];
+//                    // todo: 其他复合类型检查，例如Map、List类型
+//                    if (taintValue instanceof Object[]) {
+//                        for (Object taintValueItem : (Object[])taintValue) {
+//                            taintPool.add(System.identityHashCode(taintValueItem));
+//                        }
+//                    }
+//                    taintPool.add(System.identityHashCode(taintValue));
+//                }
+//            }
+//        }
+//    }
+    public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         if (!vulCheckContext.isEnterEntry() || vulCheckContext.agentDepth > 0) {
             return;
         }
         vulCheckContext.enterAgent();
         String clsName = cls.getName();
         String methodName = exe.getName();
-        String paramTypes = "";
-        paramTypes = Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.joining(", "));
+        String paramTypes = Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.joining(", "));
         String uniqueMethod;
         if (clsName.equals(methodName)) {
             methodName = "<init>";
         }
         uniqueMethod = String.format("%s.%s(%s)", clsName, methodName, paramTypes);
-        Logger.info(uniqueMethod);
+        Logger.info("trackMethodCall: " + uniqueMethod);
         HashMap<String, HookRule> matchedHookNodes = vulCheckContext.getMatchedHookNodes();
         // todo: 污点入参的处理逻辑需要大更改
-        String inParam = matchedHookNodes.get(uniqueMethod).getIn().toLowerCase();
-        String outParam = matchedHookNodes.get(uniqueMethod).getOut().toLowerCase();
+        TaintPositions sources = matchedHookNodes.get(uniqueMethod).getTaintSources();
+        TaintPositions targets = matchedHookNodes.get(uniqueMethod).getTaintTargets();
         HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
-        parseArgPostion(inParam, outParam, caller, args, ret, NodeTypeEnum.getByName(nodeType), taintPool, uniqueMethod);
+        captureMethodState(sources, targets, caller, args, ret, nodeType, taintPool, uniqueMethod);
         vulCheckContext.leaveAgent();
     }
     @Override
@@ -149,7 +217,7 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         vulCheckContext.sourceDepth --;
-        handleTaint("source", cls, caller, exe, args, ret);
+        trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret);
         Logger.debug("退出source节点");
     }
     @Override
@@ -164,7 +232,7 @@ public class DispatcherImpl implements Dispatcher {
 //            return;
 //        }
         vulCheckContext.propagatorDepth --;
-        handleTaint("propagator", cls, caller, exe, args, ret);
+        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret);
     }
 
 
@@ -185,7 +253,7 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         vulCheckContext.propagatorDepth --;
-        handleTaint("propagator", cls, caller, exe, args, null);
+        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, null);
     }
 
     @Override
@@ -195,7 +263,7 @@ public class DispatcherImpl implements Dispatcher {
 //            return;
 //        }
         System.out.println("进入sink节点-------------------------------------");
-        handleTaint("sink", cls, caller, exe, args, null);
+        trackMethodCall(NodeTypeEnum.SINK, cls, caller, exe, args, null);
     }
     @Override
     public void exitSink() {

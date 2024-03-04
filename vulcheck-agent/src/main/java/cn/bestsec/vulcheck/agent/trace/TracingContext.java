@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import lombok.Data;
 import org.omg.PortableInterceptor.INACTIVE;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.UUID;
  * @author hjx
  * @since 2024/2/7
  */
+@Data
 public class TracingContext {
     /**
      * 标识一次请求的唯一ID
@@ -20,6 +22,11 @@ public class TracingContext {
      * 当前调用方法的ID,递增
      */
     private int currentSpanID = 0;
+
+    public int getCurrentSpanID() {
+        int nextSpanID = currentSpanID ++;
+        return currentSpanID;
+    }
 
     /**
      * 标记是否进入业务入口方法
