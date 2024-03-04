@@ -48,17 +48,20 @@ public class DispatcherImpl implements Dispatcher {
     private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool,String uniqueMethod) {
         boolean isHitTaintPool = false;
         ArrayList<Taint> sourceTaints = new ArrayList<>();
-        for (TaintPosition taintPosition : sources.getPositions()) {
-            Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
-            int taintHash = System.identityHashCode(taintValue);
-            if (taintPool.contains(taintHash)) {
-                sourceTaints.add(new Taint(taintValue, taintHash));
+        if (sources != null) {
+            for (TaintPosition taintPosition : sources.getPositions()) {
+                Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
+                Logger.debug(taintValue);
+                int taintHash = System.identityHashCode(taintValue);
+                if (taintPool.contains(taintHash)) {
+                    sourceTaints.add(new Taint(taintValue, taintHash));
+                }
             }
-        }
-        if (sources.getRelation().equals("AND")) {
-            isHitTaintPool = sources.getPositions().size() == sourceTaints.size();
-        } else {
-            isHitTaintPool = !sourceTaints.isEmpty();
+            if (sources.getRelation().equals("AND")) {
+                isHitTaintPool = sources.getPositions().size() == sourceTaints.size();
+            } else {
+                isHitTaintPool = !sourceTaints.isEmpty();
+            }
         }
 
         ArrayList<Taint> targetTaints = new ArrayList<>();
@@ -78,8 +81,9 @@ public class DispatcherImpl implements Dispatcher {
                     // todo: 类似于集合这种复合数据类型需要拆分后再加入污点池中吗
                     for (TaintPosition taintPosition : targets.getPositions()) {
                         Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
+                        Logger.debug(taintValue);
                         int taintHash = System.identityHashCode(taintValue);
-                        taintPool.add(System.identityHashCode(taintValue));
+                        taintPool.add(taintHash);
                         targetTaints.add(new Taint(taintValue, taintHash));
                     }
                 }
@@ -193,7 +197,9 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterEntry() {
+        vulCheckContext.enterAgent();
         Logger.debug("进入entry节点");
+        vulCheckContext.leaveAgent();
         vulCheckContext.setEnterEntry(true);
     }
 
@@ -227,10 +233,13 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-//        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
-//            vulCheckContext.propagatorDepth --;
-//            return;
-//        }
+        System.out.println(vulCheckContext.propagatorDepth);
+        System.out.println(vulCheckContext.getTaintPool().get());
+        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+            vulCheckContext.propagatorDepth --;
+            return;
+        }
+        System.out.println(11111111);
         vulCheckContext.propagatorDepth --;
         trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret);
     }
@@ -243,6 +252,7 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterPropagatorWithoutThis(Object[] args) {
+//        System.out.println(111111111);
 //        System.out.println("123");
     }
 
@@ -258,11 +268,11 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
-//        vulCheckContext.sinkDepth ++;
-//        if (!vulCheckContext.isValidSink()){
-//            return;
-//        }
-        System.out.println("进入sink节点-------------------------------------");
+        vulCheckContext.sinkDepth ++;
+        if (!vulCheckContext.isValidSink()){
+            return;
+        }
+        Logger.debug("进入sink节点");
         trackMethodCall(NodeTypeEnum.SINK, cls, caller, exe, args, null);
     }
     @Override
@@ -272,7 +282,7 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         vulCheckContext.sinkDepth --;
-        System.out.println("退出sink节点--------------------------------------");
+        Logger.debug("退出sink节点");
     }
 
     @Override
