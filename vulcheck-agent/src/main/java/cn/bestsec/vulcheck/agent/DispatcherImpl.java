@@ -174,7 +174,8 @@ public class DispatcherImpl implements Dispatcher {
 //        }
 //    }
     public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!vulCheckContext.isEnterEntry() || vulCheckContext.agentDepth > 0) {
+        System.out.println(vulCheckContext.agentDepth.get());
+        if (vulCheckContext.isEnterAgent()) {
             return;
         }
         vulCheckContext.enterAgent();
@@ -189,6 +190,10 @@ public class DispatcherImpl implements Dispatcher {
         Logger.info("trackMethodCall: " + uniqueMethod);
         HashMap<String, HookRule> matchedHookNodes = vulCheckContext.getMatchedHookNodes();
         // todo: 污点入参的处理逻辑需要大更改
+        if (matchedHookNodes.get(uniqueMethod) == null) {
+            // 当前方法非预设得hook方法
+            return;
+        }
         TaintPositions sources = matchedHookNodes.get(uniqueMethod).getTaintSources();
         TaintPositions targets = matchedHookNodes.get(uniqueMethod).getTaintTargets();
         HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
@@ -197,10 +202,10 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterEntry() {
-        vulCheckContext.enterAgent();
         Logger.debug("进入entry节点");
-        vulCheckContext.leaveAgent();
         vulCheckContext.setEnterEntry(true);
+        vulCheckContext.getTaintPool().set(new HashSet<>());
+        vulCheckContext.getAgentDepth().set(0);
     }
 
     @Override
@@ -228,26 +233,23 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterPropagator() {
-        vulCheckContext.propagatorDepth ++;
+        vulCheckContext.propagatorDepth.incrementAndGet();
     }
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        System.out.println(vulCheckContext.propagatorDepth);
-        System.out.println(vulCheckContext.getTaintPool().get());
         if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
-            vulCheckContext.propagatorDepth --;
+            vulCheckContext.propagatorDepth.decrementAndGet();
             return;
         }
-        System.out.println(11111111);
-        vulCheckContext.propagatorDepth --;
+        vulCheckContext.propagatorDepth.decrementAndGet();
         trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret);
     }
 
 
     @Override
     public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
-        vulCheckContext.propagatorDepth ++;
+        vulCheckContext.propagatorDepth.incrementAndGet();
     }
 
     @Override
@@ -259,10 +261,10 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
         if (!vulCheckContext.isValidPropagator()) {
-            vulCheckContext.propagatorDepth --;
+            vulCheckContext.propagatorDepth.decrementAndGet();
             return;
         }
-        vulCheckContext.propagatorDepth --;
+        vulCheckContext.propagatorDepth.decrementAndGet();
         trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, null);
     }
 
@@ -287,17 +289,19 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterAgent() {
-        vulCheckContext.agentDepth++;
+        vulCheckContext.agentDepth.set(vulCheckContext.agentDepth.get() + 1);
+//        vulCheckContext.agentDepth.incrementAndGet();
     }
 
     @Override
     public void leaveAgent() {
-        vulCheckContext.agentDepth--;
+        vulCheckContext.agentDepth.set(vulCheckContext.agentDepth.get() - 1);
+//        vulCheckContext.agentDepth.decrementAndGet();
     }
 
     @Override
     public boolean isEnterAgent() {
-        return vulCheckContext.agentDepth > 0;
+        return vulCheckContext.agentDepth.get() > 0;
     }
 
     @Override

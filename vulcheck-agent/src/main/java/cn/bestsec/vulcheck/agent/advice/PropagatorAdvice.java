@@ -22,8 +22,7 @@ public class PropagatorAdvice {
 
     @Advice.OnMethodExit
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args,
-                            @Advice.Origin("#t") Class<?> declaringType,
-                            @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
+                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.exitPropagator(cls, caller, exe, args, ret);
     }

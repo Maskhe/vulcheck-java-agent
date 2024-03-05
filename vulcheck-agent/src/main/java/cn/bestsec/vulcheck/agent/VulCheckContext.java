@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * VulCheck上下文，单例对象，存储着污点池、hook规则等关键信息供漏洞检测时使用
@@ -30,9 +31,9 @@ public class VulCheckContext {
     private boolean debug = false;
     private boolean enterEntry;
     private boolean exitEntry;
-    public int agentDepth = 0;
+    public ThreadLocal<Integer> agentDepth = new ThreadLocal();
     public int sinkDepth = 0;
-    public int propagatorDepth = 0;
+    public AtomicInteger propagatorDepth = new AtomicInteger(0);
     public int sourceDepth = 0;
     public int filterDepth = 0;
 
@@ -40,6 +41,7 @@ public class VulCheckContext {
         this.hookRules = hookRules;
         this.taintPool = new InheritableThreadLocal<>();
         this.taintPool.set(new HashSet<Object>());
+        agentDepth.set(0);
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookNodes = new HashMap<>();
         this.tracingContextManager = new TracingContextManager();
@@ -85,26 +87,27 @@ public class VulCheckContext {
     }
 
     public boolean isEnterAgent() {
-        return this.agentDepth > 0;
+        return this.agentDepth.get() > 0;
     }
     public void enterAgent() {
-        this.agentDepth++;
+        this.agentDepth.set(this.agentDepth.get() + 1);
+//        this.agentDepth.incrementAndGet();
     }
 
     public void leaveAgent() {
-        this.agentDepth--;
+        this.agentDepth.set(this.agentDepth.get()-1);
     }
 
     public boolean isValidSink() {
-        return this.sourceDepth == 0 && this.sinkDepth == 1;
+        return this.enterEntry && this.sourceDepth == 0 && this.sinkDepth == 1;
     }
 
     public boolean isValidPropagator() {
-        return this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0;
+        return this.enterEntry && this.sourceDepth == 0 && this.propagatorDepth.get() == 1 && this.sinkDepth == 0;
     }
 
     public boolean isValidSource() {
-        return this.sourceDepth == 1;
+        return this.enterEntry && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0) && this.sinkDepth == 0;
     }
 
     public void setDebug(boolean debug) {
