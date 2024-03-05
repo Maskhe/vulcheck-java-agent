@@ -17,7 +17,7 @@ public class FileUtils {
                 if (!spyFile.getParentFile().exists()) {
                     Logger.debug(String.format("创建目录%s成功", spyFile.getParentFile()));
                     if (!spyFile.getParentFile().mkdirs()) {
-                        Logger.debug("创建目录" + spyFile.getParentFile() + "失败");
+//                        Logger.debug("创建目录" + spyFile.getParentFile() + "失败");
                     }
                 }
                 FileOutputStream fos = new FileOutputStream(spyFile);
@@ -28,7 +28,7 @@ public class FileUtils {
                 }
                 fos.close();
             }
-            Logger.info(String.format("成功提取jar文件到%s", targetPath));
+//            Logger.info(String.format("成功提取jar文件到%s", targetPath));
         } catch (IOException e) {
             Logger.error(String.format("提取vulcheck-spy.jar到%s失败！", targetPath));
         }

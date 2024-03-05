@@ -29,7 +29,7 @@ public class VulCheckContext {
     private InheritableThreadLocal<HashSet<Object>> taintPool;
     private TracingContextManager tracingContextManager;
     private boolean debug = false;
-    private boolean enterEntry;
+    public AtomicInteger entryDepth = new AtomicInteger(0);
     private boolean exitEntry;
     public ThreadLocal<Integer> agentDepth = new ThreadLocal();
     public int sinkDepth = 0;
@@ -99,15 +99,22 @@ public class VulCheckContext {
     }
 
     public boolean isValidSink() {
-        return this.enterEntry && this.sourceDepth == 0 && this.sinkDepth == 1;
+        return this.entryDepth.get() > 0 && this.sourceDepth == 0 && this.sinkDepth == 1;
     }
 
     public boolean isValidPropagator() {
-        return this.enterEntry && this.sourceDepth == 0 && this.propagatorDepth.get() == 1 && this.sinkDepth == 0;
+//        System.out.println(this.sourceDepth);
+//        System.out.println("hhhh");
+//        System.out.println(this.propagatorDepth.get());
+        return this.entryDepth.get() > 0;
     }
 
     public boolean isValidSource() {
-        return this.enterEntry && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0) && this.sinkDepth == 0;
+        System.out.println(this.entryDepth);
+        System.out.println(this.sourceDepth);
+        System.out.println(this.propagatorDepth.get());
+        System.out.println(this.sinkDepth);
+        return this.entryDepth.get() >0  && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0) && this.sinkDepth == 0;
     }
 
     public void setDebug(boolean debug) {

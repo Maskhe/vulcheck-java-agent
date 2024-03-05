@@ -202,21 +202,22 @@ public class DispatcherImpl implements Dispatcher {
     }
     @Override
     public void enterEntry() {
-        Logger.debug("进入entry节点");
-        vulCheckContext.setEnterEntry(true);
+//        Logger.debug("进入entry节点");
+        vulCheckContext.entryDepth.incrementAndGet();
         vulCheckContext.getTaintPool().set(new HashSet<>());
         vulCheckContext.getAgentDepth().set(0);
     }
 
     @Override
     public void exitEntry() {
-        vulCheckContext.setEnterEntry(false);
-        Logger.debug("退出entry节点");
+        vulCheckContext.entryDepth.decrementAndGet();
+//        Logger.debug("退出entry节点");
     }
 
     @Override
     public void enterSource() {
-        Logger.debug("进入source节点");
+        System.out.println("进入source");
+//        Logger.debug("进入source节点");
         vulCheckContext.sourceDepth ++;
     }
 
@@ -224,26 +225,35 @@ public class DispatcherImpl implements Dispatcher {
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         if (!vulCheckContext.isValidSource()) {
             vulCheckContext.sourceDepth --;
-            Logger.debug("嵌套source节点，不执行污点捕获，直接退出");
+//            Logger.debug("嵌套source节点，不执行污点捕获，直接退出");
+            System.out.println(exe);
+            System.out.println("不是有效source");
             return;
         }
         vulCheckContext.sourceDepth --;
         trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret);
-        Logger.debug("退出source节点");
+//        Logger.debug("退出source节点");
+        System.out.println("退出source");
     }
     @Override
     public void enterPropagator() {
+//        Logger.debug("进入propagator节点");
         vulCheckContext.propagatorDepth.incrementAndGet();
     }
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+//        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+//            vulCheckContext.propagatorDepth.decrementAndGet();
+//            return;
+//        }
+        if (!vulCheckContext.isValidPropagator()) {
             vulCheckContext.propagatorDepth.decrementAndGet();
             return;
         }
         vulCheckContext.propagatorDepth.decrementAndGet();
         trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret);
+//        Logger.debug("退出propagator节点");
     }
 
 
