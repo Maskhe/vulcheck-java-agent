@@ -55,6 +55,11 @@
             <artifactId>tinylog-impl</artifactId>
             <version>2.7.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.5.5.Final</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -64,7 +69,21 @@
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                    <annotationProcessorPaths>
+                        <!-- 使用lombok需要加入以下path，并且需要放在最前面，不然不会生成相应的setter方法 -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>1.5.5.Final</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
+
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -85,6 +104,7 @@
                             <include>com.google.code.gson:gson:jar:</include>
                             <include>org.tinylog:tinylog-api:jar:</include>
                             <include>org.tinylog:tinylog-impl:jar:</include>
+                            <include>org.mapstruct:mapstruct:jar:</include>
 <!--                            <include>org.slf4j:slf4j-api:jar:</include>-->
 <!--                            <include>ch.qos.logback:logback-core:jar:</include>-->
 <!--                            <include>ch.qos.logback:logback-classic:jar:</include>-->

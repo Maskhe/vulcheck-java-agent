@@ -11,7 +11,7 @@ public class SanitizerAdvice {
     @Advice.OnMethodEnter
     public static void enter(){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.enterPropagator();
+//        dispatcher.enterPropagator();
     }
 
     @Advice.OnMethodExit
@@ -19,6 +19,6 @@ public class SanitizerAdvice {
                             @Advice.Origin("#t") Class<?> declaringType,
                             @Advice.Origin("#t") String simpleTypeName, @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.exitPropagator(cls, caller, exe, args, ret);
+//        dispatcher.exitPropagator(cls, caller, exe, args, ret, );
     }
 }

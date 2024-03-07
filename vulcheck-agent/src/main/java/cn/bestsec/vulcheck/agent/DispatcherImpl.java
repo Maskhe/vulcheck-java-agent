@@ -51,7 +51,7 @@ public class DispatcherImpl implements Dispatcher {
         if (sources != null) {
             for (TaintPosition taintPosition : sources.getPositions()) {
                 Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
-                Logger.debug(taintValue);
+                System.out.println(taintValue);
                 int taintHash = System.identityHashCode(taintValue);
                 if (taintPool.contains(taintHash)) {
                     sourceTaints.add(new Taint(taintValue, taintHash));
@@ -174,7 +174,6 @@ public class DispatcherImpl implements Dispatcher {
 //        }
 //    }
     public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        System.out.println(vulCheckContext.agentDepth.get());
         if (vulCheckContext.isEnterAgent()) {
             return;
         }
@@ -216,8 +215,8 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterSource() {
-        System.out.println("进入source");
-//        Logger.debug("进入source节点");
+//        System.out.println("进入source");
+        Logger.debug("进入source节点");
         vulCheckContext.sourceDepth ++;
     }
 
@@ -225,34 +224,38 @@ public class DispatcherImpl implements Dispatcher {
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         if (!vulCheckContext.isValidSource()) {
             vulCheckContext.sourceDepth --;
-//            Logger.debug("嵌套source节点，不执行污点捕获，直接退出");
-            System.out.println(exe);
-            System.out.println("不是有效source");
             return;
         }
-        vulCheckContext.sourceDepth --;
         trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret);
-//        Logger.debug("退出source节点");
-        System.out.println("退出source");
+        Logger.debug("退出source节点");
+//        System.out.println("退出source");
+        vulCheckContext.sourceDepth --;
     }
     @Override
-    public void enterPropagator() {
-//        Logger.debug("进入propagator节点");
+    public void enterPropagator(Object caller, Object thisObject) {
         vulCheckContext.propagatorDepth.incrementAndGet();
+        if (vulCheckContext.isValidPropagator() && !vulCheckContext.getTaintPool().get().isEmpty()) {
+            vulCheckContext.enterAgent();
+            thisObject = ObjectMapper.INSTANCE.convert(caller);
+            System.out.println(thisObject);
+            vulCheckContext.leaveAgent();
+        }
+
+//        Logger.debug("进入propagator节点");
+
     }
 
     @Override
-    public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-//        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
-//            vulCheckContext.propagatorDepth.decrementAndGet();
-//            return;
-//        }
-        if (!vulCheckContext.isValidPropagator()) {
+    public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret, Object thisObject) {
+        // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
+        if (!vulCheckContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
             vulCheckContext.propagatorDepth.decrementAndGet();
             return;
         }
-        vulCheckContext.propagatorDepth.decrementAndGet();
+        System.out.println(thisObject);
+//        System.out.println("退出传播节点");
         trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret);
+        vulCheckContext.propagatorDepth.decrementAndGet();
 //        Logger.debug("退出propagator节点");
     }
 

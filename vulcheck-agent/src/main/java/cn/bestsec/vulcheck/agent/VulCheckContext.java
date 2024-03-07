@@ -103,17 +103,10 @@ public class VulCheckContext {
     }
 
     public boolean isValidPropagator() {
-//        System.out.println(this.sourceDepth);
-//        System.out.println("hhhh");
-//        System.out.println(this.propagatorDepth.get());
-        return this.entryDepth.get() > 0;
+        return this.entryDepth.get() > 0 && this.sourceDepth == 0 && this.sinkDepth == 0 && this.agentDepth.get() == 0;
     }
 
     public boolean isValidSource() {
-        System.out.println(this.entryDepth);
-        System.out.println(this.sourceDepth);
-        System.out.println(this.propagatorDepth.get());
-        System.out.println(this.sinkDepth);
         return this.entryDepth.get() >0  && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0) && this.sinkDepth == 0;
     }
 

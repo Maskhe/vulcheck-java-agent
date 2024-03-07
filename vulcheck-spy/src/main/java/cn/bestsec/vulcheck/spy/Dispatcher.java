@@ -15,7 +15,7 @@ public interface Dispatcher {
     void enterEntry();
     void exitEntry();
     void enterSource();
-    void enterPropagator();
+    void enterPropagator(Object caller, Object thisObject);
 
     /**
      * 进入无返回值的propagator节点时的增强代码
@@ -44,7 +44,7 @@ public interface Dispatcher {
      * @param args
      * @param ret
      */
-    void exitPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret);
+    void exitPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret, Object thisObject);
 
     /**
      * 无返回值的传播节点处理逻辑

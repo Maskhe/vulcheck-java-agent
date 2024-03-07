@@ -79,14 +79,15 @@ public class VulCheckAgent {
     public static AsmVisitorWrapper buildMethodMatchers(HookRule hookRule, TypeDescription typeDescription) {
         String signature = hookRule.getSignature();
         String methodName = hookRule.getMethodName();
+        String descriptor = hookRule.getDescriptor();
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
         String uniqueMethod = typeDescription.getCanonicalName() + "." + signature;
         vulCheckContext.addMatchedHookNode(uniqueMethod, hookRule);
         ElementMatcher.Junction<MethodDescription> elementMatcher;
         if (methodName.equals("<init>")){
-            elementMatcher = ElementMatchers.isConstructor();
+            elementMatcher = ElementMatchers.isConstructor().and(ElementMatchers.hasDescriptor(descriptor));
         }else {
-            elementMatcher = ElementMatchers.isMethod().and(ElementMatchers.named(methodName));
+            elementMatcher = ElementMatchers.isMethod().and(ElementMatchers.named(methodName)).and(ElementMatchers.hasDescriptor(descriptor));
         }
 
         switch(hookRule.type) {

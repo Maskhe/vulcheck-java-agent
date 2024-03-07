@@ -14,16 +14,17 @@ import java.lang.reflect.Executable;
  * @since 2023/11/15
  */
 public class PropagatorAdvice {
+
     @Advice.OnMethodEnter
-    public static void enter(){
+    public static void enter(@Advice.This Object caller, @Advice.Local("thisObject") Object thisObject){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.enterPropagator();
+        dispatcher.enterPropagator(caller, thisObject);
     }
 
     @Advice.OnMethodExit
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args,
-                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
+                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret, @Advice.Local("thisObject") Object thisObject){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.exitPropagator(cls, caller, exe, args, ret);
+        dispatcher.exitPropagator(cls, caller, exe, args, ret, thisObject);
     }
 }
