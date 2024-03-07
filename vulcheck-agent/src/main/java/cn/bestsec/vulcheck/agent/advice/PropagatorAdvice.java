@@ -17,6 +17,7 @@ public class PropagatorAdvice {
 
     @Advice.OnMethodEnter
     public static void enter(@Advice.This Object caller, @Advice.Local("thisObject") Object thisObject){
+        thisObject = caller;
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.enterPropagator(caller, thisObject);
     }

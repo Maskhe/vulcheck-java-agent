@@ -234,6 +234,7 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void enterPropagator(Object caller, Object thisObject) {
         vulCheckContext.propagatorDepth.incrementAndGet();
+
         if (vulCheckContext.isValidPropagator() && !vulCheckContext.getTaintPool().get().isEmpty()) {
             vulCheckContext.enterAgent();
             thisObject = ObjectMapper.INSTANCE.convert(caller);
