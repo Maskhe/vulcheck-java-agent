@@ -4,6 +4,7 @@ import net.bytebuddy.description.method.MethodDescription;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 
 
 /**
@@ -15,7 +16,7 @@ public interface Dispatcher {
     void enterEntry();
     void exitEntry();
     void enterSource();
-    void enterPropagator(Object caller, Object thisObject);
+    OriginCaller enterPropagator(Class<?> cls, Object caller, Executable executable, Object[]args);
 
     /**
      * 进入无返回值的propagator节点时的增强代码
@@ -44,7 +45,7 @@ public interface Dispatcher {
      * @param args
      * @param ret
      */
-    void exitPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret, Object thisObject);
+    void exitPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret, OriginCaller originalCaller);
 
     /**
      * 无返回值的传播节点处理逻辑

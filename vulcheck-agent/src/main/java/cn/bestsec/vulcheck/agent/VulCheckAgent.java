@@ -96,12 +96,12 @@ public class VulCheckAgent {
             case SOURCE:
                 return Advice.to(SourceAdvice.class).on(elementMatcher);
             case PROPAGATOR:
-//                if(!hookRule.getIn().contains("O") && !hookRule.getOut().contains("O")) {
-//                    return Advice.to(PropagatorWithOutThisAdvice.class).on(elementMatcher);
-//                } else {
-//                    return Advice.to(PropagatorAdvice.class).on(elementMatcher);
-//                }
-                return Advice.to(PropagatorAdvice.class).on(elementMatcher);
+                if(!hookRule.getIn().contains("O") && !hookRule.getOut().contains("O")) {
+                    return Advice.to(PropagatorWithOutThisAdvice.class).on(elementMatcher);
+                } else {
+                    return Advice.to(PropagatorAdvice.class).on(elementMatcher);
+                }
+//                return Advice.to(PropagatorAdvice.class).on(elementMatcher);
             case SANITIZER:
                 return Advice.to(SanitizerAdvice.class).on(elementMatcher);
             default:

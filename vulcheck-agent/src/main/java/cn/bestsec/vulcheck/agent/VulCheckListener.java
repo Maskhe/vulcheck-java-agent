@@ -32,7 +32,7 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onError(String s, ClassLoader classLoader, JavaModule javaModule, boolean b, Throwable throwable) {
-//        Logger.error(s + throwable.getMessage());
+        Logger.error(s + throwable.getMessage());
     }
 
     @Override
