@@ -91,7 +91,6 @@ public class VulCheckContext {
     }
     public void enterAgent() {
         this.agentDepth.set(this.agentDepth.get() + 1);
-//        this.agentDepth.incrementAndGet();
     }
 
     public void leaveAgent() {
@@ -99,7 +98,7 @@ public class VulCheckContext {
     }
 
     public boolean isValidSink() {
-        return this.entryDepth.get() > 0 && this.sourceDepth == 0 && this.sinkDepth == 1;
+        return this.entryDepth.get() > 0 && this.sourceDepth == 0 && this.sinkDepth == 1 && this.agentDepth.get() == 0;
     }
 
     public boolean isValidPropagator() {
@@ -107,7 +106,8 @@ public class VulCheckContext {
     }
 
     public boolean isValidSource() {
-        return this.entryDepth.get() >0  && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0) && this.sinkDepth == 0;
+        return this.entryDepth.get() >0  && this.sourceDepth == 1 && Objects.equals(this.propagatorDepth.get(), 0)
+                && this.sinkDepth == 0 && this.agentDepth.get() == 0;
     }
 
     public void setDebug(boolean debug) {

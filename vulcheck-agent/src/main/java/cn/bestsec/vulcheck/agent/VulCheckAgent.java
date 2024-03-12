@@ -2,7 +2,6 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.advice.*;
 import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
-import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.asm.AsmVisitorWrapper;
@@ -97,11 +96,12 @@ public class VulCheckAgent {
                 return Advice.to(SourceAdvice.class).on(elementMatcher);
             case PROPAGATOR:
                 if(!hookRule.getIn().contains("O") && !hookRule.getOut().contains("O")) {
-                    return Advice.to(PropagatorWithOutThisAdvice.class).on(elementMatcher);
+                    return Advice.to(PropagatorWithoutThisAdvice.class).on(elementMatcher);
+                } else if (hookRule.getMethodName().equals("<init>")) {
+                    return Advice.to(ConstructorPropagatorAdvice.class).on(elementMatcher);
                 } else {
                     return Advice.to(PropagatorAdvice.class).on(elementMatcher);
                 }
-//                return Advice.to(PropagatorAdvice.class).on(elementMatcher);
             case SANITIZER:
                 return Advice.to(SanitizerAdvice.class).on(elementMatcher);
             default:

@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.agent.trace.TracingContext;
+import cn.bestsec.vulcheck.agent.trace.TracingContextManager;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
@@ -19,10 +21,10 @@ public class VulCheckListener implements AgentBuilder.Listener {
 
     @Override
     public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, boolean b, DynamicType dynamicType) {
-//        VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-//        vulCheckContext.enterAgent();
-//        Logger.info(String.format("Transform %s ...", typeDescription.toString()));
-//        vulCheckContext.leaveAgent();
+        TracingContext tracingContext = TracingContextManager.getContext();
+        tracingContext.enterAgent();
+        Logger.info(String.format("Transform %s ...", typeDescription.toString()));
+        tracingContext.exitAgent();
     }
 
     @Override

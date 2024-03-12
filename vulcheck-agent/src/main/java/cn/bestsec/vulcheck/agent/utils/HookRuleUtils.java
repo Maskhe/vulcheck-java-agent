@@ -20,7 +20,6 @@ public class HookRuleUtils {
             methodName = "<init>";
         }
         uniqueMethod = String.format("%s.%s(%s)", clsName, methodName, paramTypes);
-//        Logger.info("trackMethodCall: " + uniqueMethod);
         HashMap<String, HookRule> matchedHookNodes = vulCheckContext.getMatchedHookNodes();
         return matchedHookNodes.get(uniqueMethod);
     }

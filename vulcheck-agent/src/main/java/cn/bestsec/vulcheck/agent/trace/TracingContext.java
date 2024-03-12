@@ -31,11 +31,11 @@ public class TracingContext {
     /**
      * 标记是否进入业务入口方法
      */
-    private boolean enterEntry = false;
+    private int entryDepth = 0;
     /**
      * 标记是否进入Agent执行逻辑
      */
-    private boolean enterAgent = false;
+    private int agentDepth = 0;
     /**
      * source节点的嵌套层级
      */
@@ -56,15 +56,23 @@ public class TracingContext {
         this.segment.addSpan(span);
     }
 
-    public boolean isEnterAgent() {
-        return this.enterAgent;
-    }
-    public void enterAgent() {
-        this.enterAgent = true;
+    public void enterEntry() {
+        this.entryDepth ++;
     }
 
-    public void leaveAgent() {
-        this.enterAgent = false;
+    public void exitEntry() {
+        this.entryDepth --;
+    }
+
+    public boolean isEnterAgent() {
+        return this.agentDepth > 0;
+    }
+    public void enterAgent() {
+        this.agentDepth ++;
+    }
+
+    public void exitAgent() {
+        this.agentDepth --;
     }
 
     /**
@@ -72,7 +80,7 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidSink() {
-        return this.sourceDepth == 0 && this.sinkDepth == 1;
+        return this.sourceDepth == 0 && this.sinkDepth == 1 && this.agentDepth == 0 && this.entryDepth == 1;
     }
 
     /**
@@ -80,7 +88,7 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidPropagator() {
-        return this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0;
+        return this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0 && this.agentDepth == 0 && this.entryDepth == 1;
     }
 
     /**
@@ -88,19 +96,19 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidSource() {
-        return this.sourceDepth == 1;
+        return this.sourceDepth == 1 && this.entryDepth > 0 && this.agentDepth == 0;
     }
 
-    public boolean isValidSanitizer() {
-        return this.sourceDepth == 0 && this.propagatorDepth == 0 && this.sinkDepth == 0 && this.sanitizerDepth == 1;
-    }
+//    public boolean isValidSanitizer() {
+//        return this.sourceDepth == 0 && this.propagatorDepth == 0 && this.sinkDepth == 0 && this.sanitizerDepth == 1;
+//    }
 
     /**
      * 是否进入业务节点
      * @return boolean
      */
     public boolean isEnterEntry() {
-        return this.enterEntry;
+        return this.entryDepth > 0;
     }
 
     public void enterSource() {
@@ -120,22 +128,35 @@ public class TracingContext {
     }
 
     public void exitSource() {
-        this.sourceDepth --;
+        this.sourceDepth = this.decrement(this.sourceDepth);
     }
 
     public void exitPropagator() {
-        this.propagatorDepth --;
+        this.propagatorDepth  = this.decrement(this.propagatorDepth);
     }
 
     public void exitSink() {
-        this.sinkDepth --;
+        this.sinkDepth  = this.decrement(this.sinkDepth);
     }
 
     public void exitSanitizer() {
-        this.sanitizerDepth --;
+        this.sanitizerDepth  = this.decrement(this.sanitizerDepth);
     }
 
     HashMap<Integer, Taint> getTaintPool() {
         return this.taintPool.get();
+    }
+
+    /**
+     * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java
+     * 但是不清楚多线程操作时会不会导致propagatorDepth少扣减
+     * @param depth 深度
+     * @return 新深度
+     */
+    private int decrement(int depth) {
+        if (depth > 0) {
+            return depth - 1;
+        }
+        return 0;
     }
 }

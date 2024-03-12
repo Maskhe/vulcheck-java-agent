@@ -23,7 +23,11 @@ public interface Dispatcher {
      */
     void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
 
-    void enterPropagatorWithoutThis(Object[] args);
+    void enterPropagatorWithoutThis();
+
+    void enterConstructorPropagator();
+
+    void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret);
 
     void enterSink(Class<?> cls, Object caller, Executable executable, Object[] args);
 
@@ -46,6 +50,9 @@ public interface Dispatcher {
      * @param ret
      */
     void exitPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret, OriginCaller originalCaller);
+
+
+    void exitPropagatorWithoutThis(Class<?> cls, Executable executable, Object[] args, Object ret);
 
     /**
      * 无返回值的传播节点处理逻辑
@@ -72,6 +79,4 @@ public interface Dispatcher {
     void leaveAgent();
 
     boolean isEnterAgent();
-
-    void test();
 }
