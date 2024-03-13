@@ -193,6 +193,7 @@ public class DispatcherImpl implements Dispatcher {
         }
         this.tracingContext.enterAgent();
         HookRule currentHookRule = HookRuleUtils.getHookRule(cls, exe);
+//        System.out.println(this.tracingContext.getPropagatorDepth());
 //        Logger.info(currentHookRule);
         if (currentHookRule == null) {
             return;
@@ -208,14 +209,19 @@ public class DispatcherImpl implements Dispatcher {
         this.tracingContext.enterEntry();
 //        vulCheckContext.entryDepth.incrementAndGet();
         vulCheckContext.getTaintPool().set(new HashSet<>());
-        this.tracingContext.enterEntry();
 //        vulCheckContext.getAgentDepth().set(0);
+        this.tracingContext.enterAgent();
+        Logger.info("进入entry");
+        this.tracingContext.exitAgent();
     }
 
     @Override
     public void exitEntry() {
 //        vulCheckContext.entryDepth.decrementAndGet();
         this.tracingContext.exitEntry();
+        this.tracingContext.enterAgent();
+        Logger.info("离开entry");
+        this.tracingContext.exitAgent();
     }
 
     @Override
@@ -232,10 +238,6 @@ public class DispatcherImpl implements Dispatcher {
             this.tracingContext.exitSource();
             return;
         }
-        System.out.println(this.tracingContext.getSourceDepth());
-        System.out.println(this.tracingContext.isEnterEntry());
-        System.out.println(this.tracingContext.getPropagatorDepth());
-        System.out.println(this.tracingContext.isEnterAgent());
         trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret, null);
         Logger.debug("退出source节点");
         this.tracingContext.exitSource();
@@ -244,6 +246,7 @@ public class DispatcherImpl implements Dispatcher {
     public OriginCaller enterPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
 //        vulCheckContext.propagatorDepth.incrementAndGet();
         this.tracingContext.enterPropagator();
+        System.out.println(this.tracingContext.getPropagatorDepth());
         OriginCaller originalCaller = new OriginCaller();
         int callerHash = 0;
         HookRule currentHookRule = null;
@@ -267,12 +270,10 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
-        if (!this.tracingContext.isValidPropagator()) {
-            System.out.println(this.tracingContext.getPropagatorDepth());
-            this.tracingContext.exitPropagator();
-            return;
+        if (this.tracingContext.isValidPropagator()) {
+            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
         }
-        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
+
         this.tracingContext.exitPropagator();
     }
 

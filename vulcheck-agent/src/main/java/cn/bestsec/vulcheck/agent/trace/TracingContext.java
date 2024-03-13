@@ -88,7 +88,7 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidPropagator() {
-        return this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0 && this.agentDepth == 0 && this.entryDepth == 1;
+        return this.agentDepth == 0 && this.entryDepth == 1 && this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0;
     }
 
     /**
@@ -116,6 +116,9 @@ public class TracingContext {
     }
 
     public void enterPropagator() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.propagatorDepth ++;
     }
 
@@ -132,6 +135,9 @@ public class TracingContext {
     }
 
     public void exitPropagator() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.propagatorDepth  = this.decrement(this.propagatorDepth);
     }
 
