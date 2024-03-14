@@ -80,7 +80,7 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidSink() {
-        return this.sourceDepth == 0 && this.sinkDepth == 1 && this.agentDepth == 0 && this.entryDepth == 1;
+        return this.agentDepth == 0 && this.entryDepth == 1 && this.sourceDepth == 0 && this.sinkDepth == 1;
     }
 
     /**
@@ -96,7 +96,7 @@ public class TracingContext {
      * @return boolean
      */
     public boolean isValidSource() {
-        return this.sourceDepth == 1 && this.entryDepth > 0 && this.agentDepth == 0;
+        return this.agentDepth == 0 &&this.entryDepth == 1 && this.sourceDepth == 1;
     }
 
 //    public boolean isValidSanitizer() {
@@ -112,6 +112,9 @@ public class TracingContext {
     }
 
     public void enterSource() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.sourceDepth ++;
     }
 
@@ -123,6 +126,9 @@ public class TracingContext {
     }
 
     public void enterSink() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.sinkDepth ++;
     }
 
@@ -131,6 +137,9 @@ public class TracingContext {
     }
 
     public void exitSource() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.sourceDepth = this.decrement(this.sourceDepth);
     }
 
@@ -142,6 +151,9 @@ public class TracingContext {
     }
 
     public void exitSink() {
+        if (!this.isEnterEntry() || this.isEnterAgent()) {
+            return;
+        }
         this.sinkDepth  = this.decrement(this.sinkDepth);
     }
 
@@ -155,6 +167,7 @@ public class TracingContext {
 
     /**
      * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java
+     * https://github.com/HXSecurity/DongTai-agent-java
      * 但是不清楚多线程操作时会不会导致propagatorDepth少扣减
      * @param depth 深度
      * @return 新深度

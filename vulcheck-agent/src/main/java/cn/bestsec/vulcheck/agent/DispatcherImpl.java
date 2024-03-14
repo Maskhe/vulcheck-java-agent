@@ -50,7 +50,7 @@ public class DispatcherImpl implements Dispatcher {
         }
         return taintValue;
     }
-    private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, OriginCaller originCaller) {
+    private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, OriginCaller originCaller, HookRule hookRule) {
         boolean isHitTaintPool = false;
         ArrayList<Taint> sourceTaints = new ArrayList<>();
 
@@ -86,10 +86,12 @@ public class DispatcherImpl implements Dispatcher {
                     taintPool.add(taintHash);
                     targetTaints.add(new Taint(taintValue, taintHash));
                 }
+                Logger.debug("命中规则：" + hookRule);
                 break;
             case PROPAGATOR:
             case SANITIZER:
                 if (isHitTaintPool) {
+                    Logger.debug("命中规则：" + hookRule);
                     // todo: 类似于集合这种复合数据类型需要拆分后再加入污点池中吗
                     for (TaintPosition taintPosition : targets.getPositions()) {
                         Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
@@ -99,10 +101,12 @@ public class DispatcherImpl implements Dispatcher {
                         taintPool.add(taintHash);
                         targetTaints.add(new Taint(taintValue, taintHash));
                     }
+
                 }
                 break;
             case SINK:
                 if (isHitTaintPool) {
+                    Logger.debug("命中规则：" + hookRule);
                     Logger.info("发现漏洞！");
                 }
                 break;
@@ -188,10 +192,7 @@ public class DispatcherImpl implements Dispatcher {
 //    }
     public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args,
                                 Object ret, OriginCaller originCaller) {
-        if (this.tracingContext.isEnterAgent()) {
-            return;
-        }
-        this.tracingContext.enterAgent();
+        this.tracingContext.enterAgent(); // 进入Agent代码执行范围
         HookRule currentHookRule = HookRuleUtils.getHookRule(cls, exe);
 //        System.out.println(this.tracingContext.getPropagatorDepth());
 //        Logger.info(currentHookRule);
@@ -201,62 +202,52 @@ public class DispatcherImpl implements Dispatcher {
         TaintPositions sources = currentHookRule.getTaintSources();
         TaintPositions targets = currentHookRule.getTaintTargets();
         HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
-        captureMethodState(sources, targets, caller, args, ret, nodeType, taintPool, originCaller);
-        this.tracingContext.exitAgent();
+        captureMethodState(sources, targets, caller, args, ret, nodeType, taintPool, originCaller, currentHookRule);
+        this.tracingContext.exitAgent(); // 退出Agent代码执行范围
     }
     @Override
     public void enterEntry() {
-        this.tracingContext.enterEntry();
-//        vulCheckContext.entryDepth.incrementAndGet();
-        vulCheckContext.getTaintPool().set(new HashSet<>());
-//        vulCheckContext.getAgentDepth().set(0);
-        this.tracingContext.enterAgent();
         Logger.info("进入entry");
-        this.tracingContext.exitAgent();
+        this.tracingContext.enterEntry();
+        vulCheckContext.getTaintPool().set(new HashSet<>());
     }
 
     @Override
     public void exitEntry() {
-//        vulCheckContext.entryDepth.decrementAndGet();
         this.tracingContext.exitEntry();
-        this.tracingContext.enterAgent();
         Logger.info("离开entry");
-        this.tracingContext.exitAgent();
     }
 
     @Override
     public void enterSource() {
         Logger.debug("进入source节点");
-//        vulCheckContext.sourceDepth ++;
         this.tracingContext.enterSource();
     }
 
     @Override
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
-        if (!this.tracingContext.isValidSource()) {
-//            vulCheckContext.sourceDepth --;
-            this.tracingContext.exitSource();
-            return;
+        if (this.tracingContext.isValidSource()) {
+            trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret, null);
         }
-        trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret, null);
+        // 下面两行代码不能调换位置，因为Logger.debug里有很多字符串拼接操作，如果调换了位置，如果在trackmethodcall打印命中的hookrule,
+        // 会发现source节点内还出现了很多传播节点调用，这在我的设计里是不允许的
         Logger.debug("退出source节点");
         this.tracingContext.exitSource();
     }
     @Override
     public OriginCaller enterPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
-//        vulCheckContext.propagatorDepth.incrementAndGet();
         this.tracingContext.enterPropagator();
-        System.out.println(this.tracingContext.getPropagatorDepth());
+
         OriginCaller originalCaller = new OriginCaller();
         int callerHash = 0;
         HookRule currentHookRule = null;
         if (this.tracingContext.isValidPropagator() && !vulCheckContext.getTaintPool().get().isEmpty()) {
-            this.tracingContext.enterAgent();
+            this.tracingContext.enterAgent(); // 进入agent代码执行范围
             currentHookRule = HookRuleUtils.getHookRule(cls, executable);
             if (currentHookRule.getIn().contains("O")) {
                 callerHash = caller.hashCode();
             }
-            this.tracingContext.exitAgent();
+            this.tracingContext.exitAgent(); // 退出agent代码执行范围
         }
         originalCaller.callerHash = callerHash;
         originalCaller.hookRule = currentHookRule;
@@ -279,11 +270,13 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagatorWithoutThis(Class<?> cls, Executable executable, Object[] args, Object ret) {
-        if (!this.tracingContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+        if (vulCheckContext.getTaintPool().get().isEmpty()) {
             this.tracingContext.exitPropagator();
             return;
         }
-        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
+        if (this.tracingContext.isValidPropagator()) {
+            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
+        }
         this.tracingContext.exitPropagator();
     }
 
@@ -305,11 +298,14 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret) {
-        if (!this.tracingContext.isValidPropagator() || vulCheckContext.getTaintPool().get().isEmpty()) {
+        if (vulCheckContext.getTaintPool().get().isEmpty()) {
             this.tracingContext.exitPropagator();
             return;
         }
-        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, ret, null);
+        if (this.tracingContext.isValidPropagator()) {
+            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, ret, null);
+        }
+
         this.tracingContext.exitPropagator();
     }
 
