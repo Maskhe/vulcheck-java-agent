@@ -1,8 +1,7 @@
 package cn.bestsec.vulcheck.agent.utils;
 
-import cn.bestsec.vulcheck.agent.HookRule;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
 import cn.bestsec.vulcheck.agent.VulCheckContext;
-import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
 import java.util.Arrays;

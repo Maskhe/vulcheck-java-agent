@@ -24,10 +24,15 @@ public class PropagatorAdvice {
         originalCaller = dispatcher.enterPropagator(cls, caller, exe, args);
     }
 
-    @Advice.OnMethodExit
+    @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args,
-                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret, @Advice.Local("originalCaller")OriginCaller originalCaller){
+                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret, @Advice.Local("originalCaller")OriginCaller originalCaller, @Advice.Thrown Throwable throwable){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.exitPropagator(cls, caller, exe, args, ret, originalCaller);
+
+
+//        if (throwable != null) {
+//            System.out.println("test"+ throwable.getMessage());
+//        }
     }
 }

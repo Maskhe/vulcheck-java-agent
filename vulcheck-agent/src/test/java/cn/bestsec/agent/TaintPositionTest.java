@@ -1,9 +1,9 @@
 package cn.bestsec.agent;
 
-import cn.bestsec.vulcheck.agent.HookRule;
-import cn.bestsec.vulcheck.agent.TaintPosition;
-import cn.bestsec.vulcheck.agent.TaintPositions;
-import cn.bestsec.vulcheck.agent.TaintPositionsDeserializer;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
+import cn.bestsec.vulcheck.agent.rule.TaintPosition;
+import cn.bestsec.vulcheck.agent.rule.TaintPositions;
+import cn.bestsec.vulcheck.agent.rule.deserializer.TaintPositionsDeserializer;
 import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

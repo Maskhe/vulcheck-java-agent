@@ -1,7 +1,7 @@
 package cn.bestsec.agent;
 
-import cn.bestsec.vulcheck.agent.HookRule;
-import cn.bestsec.vulcheck.agent.HookRuleDeserializer;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
+import cn.bestsec.vulcheck.agent.rule.deserializer.HookRuleDeserializer;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

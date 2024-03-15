@@ -1,5 +1,6 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.rule;
 
+import cn.bestsec.vulcheck.agent.rule.TaintPosition;
 import lombok.Data;
 
 import java.util.ArrayList;

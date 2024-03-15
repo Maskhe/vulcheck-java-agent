@@ -21,7 +21,7 @@ public interface Dispatcher {
     /**
      * 进入无返回值的propagator节点时的增强代码
      */
-    void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
+//    void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
 
     void enterPropagatorWithoutThis();
 
@@ -61,7 +61,7 @@ public interface Dispatcher {
      * @param executable 当前方法
      * @param args 当前方法所有的入参
      */
-    void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
+//    void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args);
 
     /**
      *
@@ -76,7 +76,7 @@ public interface Dispatcher {
     /**
      * 离开Agent执行范围
      */
-    void leaveAgent();
+    void exitAgent();
 
     boolean isEnterAgent();
 }

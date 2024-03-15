@@ -1,5 +1,8 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.rule.deserializer;
 
+import cn.bestsec.vulcheck.agent.rule.HookRule;
+import cn.bestsec.vulcheck.agent.rule.TaintPosition;
+import cn.bestsec.vulcheck.agent.rule.TaintPositions;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;

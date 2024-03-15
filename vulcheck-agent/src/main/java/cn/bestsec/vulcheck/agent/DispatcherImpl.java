@@ -2,6 +2,9 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
+import cn.bestsec.vulcheck.agent.rule.TaintPosition;
+import cn.bestsec.vulcheck.agent.rule.TaintPositions;
 import cn.bestsec.vulcheck.agent.trace.MethodEvent;
 import cn.bestsec.vulcheck.agent.trace.Taint;
 import cn.bestsec.vulcheck.agent.trace.TracingContext;
@@ -13,10 +16,7 @@ import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.stream.Collectors;
 
 /**
  * 分发器实现类
@@ -256,9 +256,13 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret, OriginCaller originalCaller) {
-        if (vulCheckContext.getTaintPool().get().isEmpty()) {
-            this.tracingContext.exitPropagator();
-            return;
+        try {
+            if (vulCheckContext.getTaintPool().get().isEmpty()) {
+                this.tracingContext.exitPropagator();
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println(e);
         }
         // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
         if (this.tracingContext.isValidPropagator()) {
@@ -281,10 +285,10 @@ public class DispatcherImpl implements Dispatcher {
     }
 
 
-    @Override
-    public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
-        vulCheckContext.propagatorDepth.incrementAndGet();
-    }
+//    @Override
+//    public void enterPropagatorWithNoRet(Class<?> cls, Object caller, Executable executable, Object[] args) {
+//        vulCheckContext.propagatorDepth.incrementAndGet();
+//    }
 
     @Override
     public void enterPropagatorWithoutThis() {
@@ -310,15 +314,15 @@ public class DispatcherImpl implements Dispatcher {
     }
 
 
-    @Override
-    public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
-        if (!vulCheckContext.isValidPropagator()) {
-            vulCheckContext.propagatorDepth.decrementAndGet();
-            return;
-        }
-        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, null, null);
-        vulCheckContext.propagatorDepth.decrementAndGet();
-    }
+//    @Override
+//    public void exitPropagatorWithNoRet(Class<?> cls, Object caller, Executable exe, Object[] args) {
+//        if (!vulCheckContext.isValidPropagator()) {
+//            vulCheckContext.propagatorDepth.decrementAndGet();
+//            return;
+//        }
+//        trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, null, null);
+//        vulCheckContext.propagatorDepth.decrementAndGet();
+//    }
 
     @Override
     public void enterSink(Class<?> cls, Object caller, Executable exe, Object[] args) {
@@ -335,16 +339,16 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void enterAgent() {
-        vulCheckContext.agentDepth.set(vulCheckContext.agentDepth.get() + 1);
+        this.tracingContext.enterAgent();
     }
 
     @Override
-    public void leaveAgent() {
-        vulCheckContext.agentDepth.set(vulCheckContext.agentDepth.get() - 1);
+    public void exitAgent() {
+        this.tracingContext.exitAgent();
     }
 
     @Override
     public boolean isEnterAgent() {
-        return vulCheckContext.agentDepth.get() > 0;
+        return this.tracingContext.isEnterAgent();
     }
 }

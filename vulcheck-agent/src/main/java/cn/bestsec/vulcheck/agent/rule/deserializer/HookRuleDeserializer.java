@@ -1,7 +1,8 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.rule.deserializer;
 
 import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;

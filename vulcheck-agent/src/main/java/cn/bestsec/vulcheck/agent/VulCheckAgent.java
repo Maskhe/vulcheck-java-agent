@@ -2,6 +2,7 @@ package cn.bestsec.vulcheck.agent;
 
 import cn.bestsec.vulcheck.agent.advice.*;
 import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.asm.AsmVisitorWrapper;
@@ -65,7 +66,7 @@ public class VulCheckAgent {
                     builder = builder.visit(buildMethodMatchers(hookRule, typeDescription));
                     return builder;
                 };
-                if (hookRule.inherit == InheritTypeEnum.ALL || hookRule.inherit == InheritTypeEnum.SUBCLASSES) {
+                if (hookRule.getInherit() == InheritTypeEnum.ALL || hookRule.getInherit() == InheritTypeEnum.SUBCLASSES) {
                     agentBuilder = agentBuilder.type(ElementMatchers.hasSuperType(ElementMatchers.named(className))).transform(transformer);
                 } else {
                     agentBuilder = agentBuilder.type(ElementMatchers.named(className)).transform(transformer);
@@ -89,7 +90,7 @@ public class VulCheckAgent {
             elementMatcher = ElementMatchers.isMethod().and(ElementMatchers.named(methodName)).and(ElementMatchers.hasDescriptor(descriptor));
         }
 
-        switch(hookRule.type) {
+        switch(hookRule.getType()) {
             case ENTRY:
                 return Advice.to(EntryAdvice.class).on(elementMatcher);
             case SOURCE:

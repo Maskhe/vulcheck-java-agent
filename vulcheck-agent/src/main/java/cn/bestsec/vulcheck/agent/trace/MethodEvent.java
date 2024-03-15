@@ -1,7 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
-import cn.bestsec.vulcheck.agent.HookRule;
-import cn.bestsec.vulcheck.agent.VulCheckContext;
+import cn.bestsec.vulcheck.agent.rule.HookRule;
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 
 import java.util.ArrayList;

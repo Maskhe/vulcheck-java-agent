@@ -1,4 +1,4 @@
-package cn.bestsec.vulcheck.agent;
+package cn.bestsec.vulcheck.agent.rule;
 import cn.bestsec.vulcheck.agent.enums.InheritTypeEnum;
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
 import cn.bestsec.vulcheck.agent.enums.PositionTypeEnum;
