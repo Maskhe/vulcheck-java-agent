@@ -24,16 +24,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class VulCheckContext {
     private HashMap<String, ArrayList<HookRule>> hookRules;
     private HashMap<String, HookRule> matchedHookNodes;
-    private InheritableThreadLocal<HashSet<Object>> taintPool;
+//    private InheritableThreadLocal<HashSet<Object>> taintPool;
     private TracingContextManager tracingContextManager;
 
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
-        this.taintPool = new InheritableThreadLocal<>();
-        this.taintPool.set(new HashSet<>());
+//        this.taintPool = new InheritableThreadLocal<>();
+//        this.taintPool.set(new HashSet<>());
+        this.tracingContextManager = new TracingContextManager();
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookNodes = new HashMap<>();
-        this.tracingContextManager = new TracingContextManager();
     }
 
     private static class VulCheckContextHolder{
@@ -78,4 +78,8 @@ public class VulCheckContext {
 //    public boolean isValidPropagator() {
 //        return this.entryDepth.get() > 0 && this.sourceDepth == 0 && this.sinkDepth == 0 && this.agentDepth.get() == 0;
 //    }
+
+    public String toString() {
+        return "vulcheckcontext";
+    }
 }

@@ -29,7 +29,7 @@ public class DispatcherImpl implements Dispatcher {
 
     public DispatcherImpl(VulCheckContext vulCheckContext) {
         this.vulCheckContext = vulCheckContext;
-        this.tracingContext = TracingContextManager.getContext();
+        this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext();
     }
 
     private Object getTaintByPosition(TaintPosition position, Object caller, Object[] args, Object ret) {
@@ -50,7 +50,7 @@ public class DispatcherImpl implements Dispatcher {
         }
         return taintValue;
     }
-    private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, OriginCaller originCaller, HookRule hookRule) {
+    private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, OriginCaller originCaller, HookRule hookRule) {
         boolean isHitTaintPool = false;
         ArrayList<Taint> sourceTaints = new ArrayList<>();
 
@@ -65,7 +65,7 @@ public class DispatcherImpl implements Dispatcher {
 //                    taintHash = System.identityHashCode(taintValue);
                     taintHash = taintValue.hashCode();
                 }
-                if (taintPool.contains(taintHash)) {
+                if (this.tracingContext.isHitTaintPool(taintHash)) {
                     sourceTaints.add(new Taint(taintValue, taintHash));
                 }
             }
@@ -83,9 +83,14 @@ public class DispatcherImpl implements Dispatcher {
                 for (TaintPosition taintPosition : targets.getPositions()) {
                     Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                     int taintHash = taintValue.hashCode();
-                    taintPool.add(taintHash);
-                    targetTaints.add(new Taint(taintValue, taintHash));
+//                    taintPool.add(taintHash);
+                    Taint taint = new Taint(taintValue, taintHash);
+                    targetTaints.add(taint);
+                    this.tracingContext.addTaint(taintHash, taint); // 放入污点池
                 }
+                methodEvent.setSpanID(this.tracingContext.getCurrentSpanID());
+                methodEvent.setHookRule(hookRule).setSourceTaints(sourceTaints).setTargetTaints(targetTaints);
+                this.tracingContext.addMethodToSegment(methodEvent);
                 Logger.debug("命中规则：" + hookRule);
                 break;
             case PROPAGATOR:
@@ -98,22 +103,26 @@ public class DispatcherImpl implements Dispatcher {
                         Logger.debug("当前污点值：" + taintValue);
 //                        int taintHash = System.identityHashCode(taintValue);
                         int taintHash = taintValue.hashCode();
-                        taintPool.add(taintHash);
+                        Taint taint = new Taint(taintValue, taintHash);
+//                        taintPool.add(taintHash);
+                        this.tracingContext.addTaint(taintHash, taint); // 放入污点池
                         targetTaints.add(new Taint(taintValue, taintHash));
                     }
-
+                    methodEvent.setSpanID(this.tracingContext.getCurrentSpanID());
+                    methodEvent.setHookRule(hookRule).setSourceTaints(sourceTaints).setTargetTaints(targetTaints);
+                    this.tracingContext.addMethodToSegment(methodEvent);
                 }
                 break;
             case SINK:
                 if (isHitTaintPool) {
                     Logger.debug("命中规则：" + hookRule);
                     Logger.info("发现漏洞！");
+                    methodEvent.setSpanID(this.tracingContext.getCurrentSpanID());
+                    methodEvent.setHookRule(hookRule).setSourceTaints(sourceTaints).setTargetTaints(targetTaints);
+                    this.tracingContext.addMethodToSegment(methodEvent);
                 }
                 break;
         }
-        methodEvent.setSourceTaints(sourceTaints);
-        methodEvent.setTargetTaints(targetTaints);
-        TracingContextManager.getContext().addMethodToSegment(methodEvent);
     }
 //    private void parseArgPostion(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, String uniqueMethod) {
 //        boolean isHitTaintPool = false;
@@ -192,24 +201,25 @@ public class DispatcherImpl implements Dispatcher {
 //    }
     public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args,
                                 Object ret, OriginCaller originCaller) {
+        if (!nodeType.equals(NodeTypeEnum.SOURCE) && this.tracingContext.isTaintPoolEmpty()) {
+            return;
+        }
         this.tracingContext.enterAgent(); // 进入Agent代码执行范围
         HookRule currentHookRule = HookRuleUtils.getHookRule(cls, exe);
-//        System.out.println(this.tracingContext.getPropagatorDepth());
-//        Logger.info(currentHookRule);
         if (currentHookRule == null) {
             return;
         }
         TaintPositions sources = currentHookRule.getTaintSources();
         TaintPositions targets = currentHookRule.getTaintTargets();
-        HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
-        captureMethodState(sources, targets, caller, args, ret, nodeType, taintPool, originCaller, currentHookRule);
+//        HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
+        captureMethodState(sources, targets, caller, args, ret, nodeType, originCaller, currentHookRule);
         this.tracingContext.exitAgent(); // 退出Agent代码执行范围
     }
     @Override
     public void enterEntry() {
         Logger.info("进入entry");
         this.tracingContext.enterEntry();
-        vulCheckContext.getTaintPool().set(new HashSet<>());
+//        vulCheckContext.getTaintPool().set(new HashSet<>());
     }
 
     @Override
@@ -241,7 +251,7 @@ public class DispatcherImpl implements Dispatcher {
         OriginCaller originalCaller = new OriginCaller();
         int callerHash = 0;
         HookRule currentHookRule = null;
-        if (this.tracingContext.isValidPropagator() && !vulCheckContext.getTaintPool().get().isEmpty()) {
+        if (this.tracingContext.isValidPropagator() && !this.tracingContext.isTaintPoolEmpty()) {
             this.tracingContext.enterAgent(); // 进入agent代码执行范围
             currentHookRule = HookRuleUtils.getHookRule(cls, executable);
             if (currentHookRule.getIn().contains("O")) {
@@ -256,28 +266,15 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret, OriginCaller originalCaller) {
-        try {
-            if (vulCheckContext.getTaintPool().get().isEmpty()) {
-                this.tracingContext.exitPropagator();
-                return;
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
         // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
         if (this.tracingContext.isValidPropagator()) {
             trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
         }
-
         this.tracingContext.exitPropagator();
     }
 
     @Override
     public void exitPropagatorWithoutThis(Class<?> cls, Executable executable, Object[] args, Object ret) {
-        if (vulCheckContext.getTaintPool().get().isEmpty()) {
-            this.tracingContext.exitPropagator();
-            return;
-        }
         if (this.tracingContext.isValidPropagator()) {
             trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
         }
@@ -302,10 +299,6 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret) {
-        if (vulCheckContext.getTaintPool().get().isEmpty()) {
-            this.tracingContext.exitPropagator();
-            return;
-        }
         if (this.tracingContext.isValidPropagator()) {
             trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, ret, null);
         }

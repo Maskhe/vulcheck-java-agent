@@ -16,7 +16,7 @@ public class MethodEvent implements Span  {
     /**
      * 方法类型：source、propagator等
      */
-    private NodeTypeEnum methodType;
+    private NodeTypeEnum nodeType;
     /**
      * 事件类型
      */
@@ -49,8 +49,12 @@ public class MethodEvent implements Span  {
      * 方法调用时间
      */
     Long invokeTime;
+    public MethodEvent(int spanID) {
+        this.spanID = spanID;
+        this.invokeTime = System.currentTimeMillis();
+    }
+
     public MethodEvent() {
-        this.spanID = TracingContextManager.getContext().getCurrentSpanID();
         this.invokeTime = System.currentTimeMillis();
     }
 
@@ -65,11 +69,11 @@ public class MethodEvent implements Span  {
     }
 
     public boolean isSink() {
-        return this.methodType.equals(NodeTypeEnum.SINK);
+        return this.nodeType.equals(NodeTypeEnum.SINK);
     }
 
     public boolean isSource() {
-        return this.methodType.equals(NodeTypeEnum.SOURCE);
+        return this.nodeType.equals(NodeTypeEnum.SOURCE);
     }
 
     public MethodEvent setSourceValues(ArrayList<Object> sourceValues) {
@@ -101,4 +105,22 @@ public class MethodEvent implements Span  {
         this.targetTaints = taints;
         return this;
     }
+
+    public MethodEvent setHookRule(HookRule hookRule) {
+        this.hookRule = hookRule;
+        this.nodeType = hookRule.getType();
+        this.eventType = hookRule.getEventType();
+        return this;
+    }
+
+    public MethodEvent setNodeType(NodeTypeEnum nodeType) {
+        this.nodeType = nodeType;
+        return this;
+    }
+
+    public MethodEvent setEventType(String eventType) {
+        this.eventType = eventType;
+        return this;
+    }
+
 }

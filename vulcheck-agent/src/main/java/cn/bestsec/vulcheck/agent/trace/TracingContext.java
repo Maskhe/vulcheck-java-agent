@@ -24,8 +24,9 @@ public class TracingContext {
     private int currentSpanID = 0;
 
     public int getCurrentSpanID() {
-        int nextSpanID = currentSpanID ++;
-        return currentSpanID;
+        int spanID = this.currentSpanID;
+        this.currentSpanID ++;
+        return spanID;
     }
 
     /**
@@ -165,6 +166,17 @@ public class TracingContext {
         return this.taintPool.get();
     }
 
+    public boolean isTaintPoolEmpty() {
+        return this.taintPool.get().isEmpty();
+    }
+
+    public boolean isHitTaintPool(int taintHash) {
+        return this.taintPool.get().containsKey(taintHash);
+    }
+
+    public void addTaint(int taintHash, Taint taint) {
+        this.taintPool.get().put(taintHash, taint);
+    }
     /**
      * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java
      * https://github.com/HXSecurity/DongTai-agent-java
