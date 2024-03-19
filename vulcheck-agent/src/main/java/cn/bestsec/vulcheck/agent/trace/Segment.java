@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.utils.GsonUtils;
+
 import java.util.ArrayList;
 
 /**
@@ -25,6 +27,6 @@ public class Segment {
     }
 
     public String toJson() {
-        return "json格式";
+        return GsonUtils.toJson(this);
     }
 }

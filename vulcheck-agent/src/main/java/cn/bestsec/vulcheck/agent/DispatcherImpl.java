@@ -199,6 +199,7 @@ public class DispatcherImpl implements Dispatcher {
             return;
         }
         this.tracingContext.enterAgent(); // 进入Agent代码执行范围
+        // todo: 这里应该需要返回真是被执行的方法的signature信息，存储到MethodEvent中，并最终上报的服务端进行调用链展示
         HookRule currentHookRule = HookRuleUtils.getHookRule(cls, exe);
         if (currentHookRule == null) {
             return;
@@ -212,17 +213,23 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void enterEntry() {
         Logger.info("进入entry");
+        this.tracingContext.initTaintPool();
+        this.tracingContext.initSegment();
         this.tracingContext.enterEntry();
 //        vulCheckContext.getTaintPool().set(new HashSet<>());
     }
 
     @Override
     public void exitEntry() {
+        this.tracingContext.enterAgent();
         // todo: 发送segment到VulScanner进行分析
+        Logger.info(this.tracingContext.toJson());
         this.tracingContext.clearTaintPool();
         this.tracingContext.clearSegment();
         this.tracingContext.exitEntry();
+
         Logger.info("离开entry");
+        this.tracingContext.exitEntry();
     }
 
     @Override

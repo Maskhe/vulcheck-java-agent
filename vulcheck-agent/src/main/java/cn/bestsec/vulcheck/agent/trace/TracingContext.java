@@ -1,5 +1,7 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.utils.GsonUtils;
+import com.google.gson.Gson;
 import lombok.Data;
 import org.omg.PortableInterceptor.INACTIVE;
 
@@ -178,10 +180,17 @@ public class TracingContext {
         this.taintPool.get().put(taint.getHash(), taint);
     }
 
+
+    public void initTaintPool() {
+        this.taintPool.set(new HashMap<>());
+    }
     public void clearTaintPool() {
         this.taintPool.remove();
     }
 
+    public void initSegment() {
+        this.segment.set(new Segment(""));
+    }
     public void clearSegment() {
         this.segment.remove();
     }
@@ -198,5 +207,9 @@ public class TracingContext {
             return depth - 1;
         }
         return 0;
+    }
+
+    public String toJson() {
+        return GsonUtils.toJson(this);
     }
 }

@@ -16,4 +16,6 @@ public interface Span {
      * 设置spanID
      */
     void setSpanID(int spanID);
+
+    String toJson();
 }

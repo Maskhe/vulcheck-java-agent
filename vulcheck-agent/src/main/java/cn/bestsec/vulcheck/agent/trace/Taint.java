@@ -23,4 +23,8 @@ public class Taint {
     public int getHash() {
         return this.hash;
     }
+
+    public String toJson() {
+        return String.format("{\"value\":\"%s\", \"hash\":\"%d\"}", value.toString(), hash);
+    }
 }

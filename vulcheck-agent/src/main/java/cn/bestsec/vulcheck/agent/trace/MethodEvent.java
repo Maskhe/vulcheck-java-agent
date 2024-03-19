@@ -2,12 +2,15 @@ package cn.bestsec.vulcheck.agent.trace;
 
 import cn.bestsec.vulcheck.agent.rule.HookRule;
 import cn.bestsec.vulcheck.agent.enums.NodeTypeEnum;
+import cn.bestsec.vulcheck.agent.utils.GsonUtils;
+import lombok.Data;
 
 import java.util.ArrayList;
 
 /**
  * 方法调用事件
  */
+@Data
 public class MethodEvent implements Span  {
     /**
      * 用于标识一次方法调用的唯一ID
@@ -118,9 +121,17 @@ public class MethodEvent implements Span  {
         return this;
     }
 
+    public NodeTypeEnum getNodeType() {
+        return this.nodeType;
+    }
+
     public MethodEvent setEventType(String eventType) {
         this.eventType = eventType;
         return this;
     }
 
+    @Override
+    public String toJson() {
+        return GsonUtils.toJson(this);
+    }
 }
