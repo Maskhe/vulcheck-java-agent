@@ -62,7 +62,6 @@ public class DispatcherImpl implements Dispatcher {
                     // 传播节点的caller对象的hash在onmethodenter阶段生成
                     taintHash = originCaller.callerHash;
                 } else {
-//                    taintHash = System.identityHashCode(taintValue);
                     taintHash = taintValue.hashCode();
                 }
                 if (this.tracingContext.isHitTaintPool(taintHash)) {
@@ -82,11 +81,9 @@ public class DispatcherImpl implements Dispatcher {
             case SOURCE:
                 for (TaintPosition taintPosition : targets.getPositions()) {
                     Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
-                    int taintHash = taintValue.hashCode();
-//                    taintPool.add(taintHash);
-                    Taint taint = new Taint(taintValue, taintHash);
+                    Taint taint = new Taint(taintValue);
                     targetTaints.add(taint);
-                    this.tracingContext.addTaint(taintHash, taint); // 放入污点池
+                    this.tracingContext.addTaint(taint); // 放入污点池
                 }
                 methodEvent.setSpanID(this.tracingContext.getCurrentSpanID());
                 methodEvent.setHookRule(hookRule).setSourceTaints(sourceTaints).setTargetTaints(targetTaints);
@@ -101,12 +98,9 @@ public class DispatcherImpl implements Dispatcher {
                     for (TaintPosition taintPosition : targets.getPositions()) {
                         Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                         Logger.debug("当前污点值：" + taintValue);
-//                        int taintHash = System.identityHashCode(taintValue);
-                        int taintHash = taintValue.hashCode();
-                        Taint taint = new Taint(taintValue, taintHash);
-//                        taintPool.add(taintHash);
-                        this.tracingContext.addTaint(taintHash, taint); // 放入污点池
-                        targetTaints.add(new Taint(taintValue, taintHash));
+                        Taint taint = new Taint(taintValue);
+                        this.tracingContext.addTaint(taint); // 放入污点池
+                        targetTaints.add(taint);
                     }
                     methodEvent.setSpanID(this.tracingContext.getCurrentSpanID());
                     methodEvent.setHookRule(hookRule).setSourceTaints(sourceTaints).setTargetTaints(targetTaints);
@@ -224,6 +218,9 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitEntry() {
+        // todo: 发送segment到VulScanner进行分析
+        this.tracingContext.clearTaintPool();
+        this.tracingContext.clearSegment();
         this.tracingContext.exitEntry();
         Logger.info("离开entry");
     }

@@ -25,4 +25,10 @@ public class TracingContextManager {
     public void destoryContext() {
         context.remove();
     }
+
+    // 把context转换为json格式
+    public String context2Json() {}
+
+    // 把json格式的context打入队列，供worker异步消费
+    public void reportContext(){}
 }

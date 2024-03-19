@@ -44,17 +44,17 @@ public class TracingContext {
     private int propagatorDepth = 0;
     private int sinkDepth = 0;
     private int sanitizerDepth = 0;
-    private final Segment segment;
+    private final InheritableThreadLocal<Segment> segment = new InheritableThreadLocal<>();
     private final InheritableThreadLocal<HashMap<Integer, Taint>> taintPool = new InheritableThreadLocal<>();
 
     public TracingContext(Segment segment) {
-        this.segment = segment;
+        this.segment.set(segment);
         this.globalID = UUID.randomUUID().toString();
         this.taintPool.set(new HashMap<>());
     }
 
     public void addMethodToSegment(Span span) {
-        this.segment.addSpan(span);
+        this.segment.get().addSpan(span);
     }
 
     public void enterEntry() {
@@ -174,9 +174,18 @@ public class TracingContext {
         return this.taintPool.get().containsKey(taintHash);
     }
 
-    public void addTaint(int taintHash, Taint taint) {
-        this.taintPool.get().put(taintHash, taint);
+    public void addTaint(Taint taint) {
+        this.taintPool.get().put(taint.getHash(), taint);
     }
+
+    public void clearTaintPool() {
+        this.taintPool.remove();
+    }
+
+    public void clearSegment() {
+        this.segment.remove();
+    }
+
     /**
      * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java
      * https://github.com/HXSecurity/DongTai-agent-java
