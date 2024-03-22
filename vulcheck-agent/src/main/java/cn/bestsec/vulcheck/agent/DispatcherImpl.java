@@ -223,13 +223,13 @@ public class DispatcherImpl implements Dispatcher {
     public void exitEntry() {
         this.tracingContext.enterAgent();
         // todo: 发送segment到VulScanner进行分析
-        Logger.info(this.tracingContext.toJson());
+        String segmentJson = this.tracingContext.toJson();
+        Logger.info(segmentJson);
+        this.vulCheckContext.report(segmentJson);
         this.tracingContext.clearTaintPool();
         this.tracingContext.clearSegment();
         this.tracingContext.exitEntry();
-
         Logger.info("离开entry");
-        this.tracingContext.exitEntry();
     }
 
     @Override

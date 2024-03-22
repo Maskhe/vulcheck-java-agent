@@ -14,6 +14,9 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.io.*;
 import java.lang.instrument.Instrumentation;
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 import cn.bestsec.vulcheck.agent.utils.FileUtils;
 import org.tinylog.Logger;
@@ -49,7 +52,6 @@ public class VulCheckAgent {
         inst.appendToBootstrapClassLoaderSearch(jarFile);
 
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-
         AgentBuilder agentBuilder = new AgentBuilder.Default().ignore(ElementMatchers.nameContains(".bytebuddy"))
                 .with(new VulCheckListener()).with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION) // redefinition和retransformation的区别：https://lsieun.github.io/java-agent/s01ch03/redefine-vs-retransform.html
                 .with(AgentBuilder.TypeStrategy.Default.REBASE) // rebase和redefine的区别：rebase会将原方法改名并保存，再重写原方法，redefine会直接重写原有方法
@@ -73,6 +75,8 @@ public class VulCheckAgent {
                 }
             }
         }
+//        ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
+//        executor.scheduleAtFixedRate(new Reporter(), 10, 10, TimeUnit.SECONDS);
         agentBuilder.installOn(inst);
     }
 
