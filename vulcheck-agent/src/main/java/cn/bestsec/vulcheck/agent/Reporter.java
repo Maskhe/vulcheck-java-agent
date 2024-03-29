@@ -9,12 +9,12 @@ public class Reporter implements Runnable{
 
     @Override
     public void run() {
-        tracingContext.enterAgent();
+        tracingContext.enterAgent(); // 进入agent执行范围
         if (vulCheckContext.getSegmentQueue().isEmpty()) {
             return;
         }
         String segmentJson = vulCheckContext.getSegmentQueue().poll();
         Logger.info(segmentJson);
-        tracingContext.exitAgent();
+        tracingContext.exitAgent();  // 退出agent执行范围
     }
 }
