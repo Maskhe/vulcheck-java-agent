@@ -16,9 +16,8 @@ public class ConstructorPropagatorAdvice {
     }
 
     @Advice.OnMethodExit
-    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args,
-                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object ret){
+    public static void exit(@Advice.Origin Class<?> cls, @Advice.This Object caller, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
-        dispatcher.exitConstructorPropagator(cls, caller, exe, args, ret);
+        dispatcher.exitConstructorPropagator(cls, caller, exe, args);
     }
 }

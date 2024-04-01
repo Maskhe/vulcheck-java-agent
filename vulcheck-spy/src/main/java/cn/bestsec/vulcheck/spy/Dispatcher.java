@@ -27,7 +27,7 @@ public interface Dispatcher {
 
     void enterConstructorPropagator();
 
-    void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret);
+    void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args);
 
     void enterSink(Class<?> cls, Object caller, Executable executable, Object[] args);
 

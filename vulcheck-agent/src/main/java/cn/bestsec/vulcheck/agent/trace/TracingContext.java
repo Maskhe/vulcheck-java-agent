@@ -195,6 +195,12 @@ public class TracingContext {
         this.segment.remove();
     }
 
+//    public void clearThreadState() {
+//        this.clearTaintPool();
+//        this.clearSegment();
+//        this.currentSpanID = 0;
+//    }
+
     /**
      * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java
      * https://github.com/HXSecurity/DongTai-agent-java

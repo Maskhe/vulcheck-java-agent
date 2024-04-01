@@ -25,7 +25,7 @@ import java.util.HashSet;
  */
 public class DispatcherImpl implements Dispatcher {
     private final VulCheckContext vulCheckContext;
-    private final TracingContext tracingContext;
+    private TracingContext tracingContext;
 
     public DispatcherImpl(VulCheckContext vulCheckContext) {
         this.vulCheckContext = vulCheckContext;
@@ -206,17 +206,14 @@ public class DispatcherImpl implements Dispatcher {
         }
         TaintPositions sources = currentHookRule.getTaintSources();
         TaintPositions targets = currentHookRule.getTaintTargets();
-//        HashSet<Object> taintPool = vulCheckContext.getTaintPool().get();
         captureMethodState(sources, targets, caller, args, ret, nodeType, originCaller, currentHookRule);
         this.tracingContext.exitAgent(); // 退出Agent代码执行范围
     }
     @Override
     public void enterEntry() {
         Logger.info("进入entry");
-        this.tracingContext.initTaintPool();
-        this.tracingContext.initSegment();
+        this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext(); // 初始化本次请求的context
         this.tracingContext.enterEntry();
-//        vulCheckContext.getTaintPool().set(new HashSet<>());
     }
 
     @Override
@@ -225,10 +222,10 @@ public class DispatcherImpl implements Dispatcher {
         // todo: 发送segment到VulScanner进行分析
         String segmentJson = this.tracingContext.toJson();
         Logger.info(segmentJson);
-        this.vulCheckContext.report(segmentJson);
-        this.tracingContext.clearTaintPool();
-        this.tracingContext.clearSegment();
+        this.tracingContext.exitAgent();
+//        this.vulCheckContext.report(segmentJson);
         this.tracingContext.exitEntry();
+        this.vulCheckContext.getTracingContextManager().destoryContext(); // 清理本次请求的context
         Logger.info("离开entry");
     }
 
@@ -302,9 +299,9 @@ public class DispatcherImpl implements Dispatcher {
     }
 
     @Override
-    public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args, Object ret) {
+    public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
         if (this.tracingContext.isValidPropagator()) {
-            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, ret, null);
+            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, null, null);
         }
 
         this.tracingContext.exitPropagator();

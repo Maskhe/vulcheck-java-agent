@@ -17,7 +17,7 @@ public enum InheritTypeEnum {
 
     public  static InheritTypeEnum getTypeByName(String name){
         for (InheritTypeEnum inheritTypeEnum : InheritTypeEnum.values()) {
-            if (inheritTypeEnum.name.equals(name)) {
+            if (inheritTypeEnum.name.equalsIgnoreCase(name)) {
                 return inheritTypeEnum;
             }
         }

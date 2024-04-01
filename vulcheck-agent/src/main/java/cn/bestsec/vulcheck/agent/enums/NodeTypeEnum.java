@@ -28,7 +28,7 @@ public enum NodeTypeEnum {
 
     public static NodeTypeEnum getByName(String name) {
         for (NodeTypeEnum nodeType: NodeTypeEnum.values()) {
-            if (nodeType.getName().equals(name)) {
+            if (nodeType.getName().equalsIgnoreCase(name)) {
                 return nodeType;
             }
         }
