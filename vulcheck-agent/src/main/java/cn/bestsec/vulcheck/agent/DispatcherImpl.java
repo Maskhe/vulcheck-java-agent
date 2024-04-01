@@ -220,8 +220,8 @@ public class DispatcherImpl implements Dispatcher {
     public void exitEntry() {
         this.tracingContext.enterAgent();
         // todo: 发送segment到VulScanner进行分析
-        String segmentJson = this.tracingContext.toJson();
-        Logger.info(segmentJson);
+//        String segmentJson = this.tracingContext.toJson();
+//        Logger.info(segmentJson);
         this.tracingContext.exitAgent();
 //        this.vulCheckContext.report(segmentJson);
         this.tracingContext.exitEntry();
@@ -248,30 +248,40 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public OriginCaller enterPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
         this.tracingContext.enterPropagator();
-
         OriginCaller originalCaller = new OriginCaller();
-        int callerHash = 0;
-        HookRule currentHookRule = null;
-        if (this.tracingContext.isValidPropagator() && !this.tracingContext.isTaintPoolEmpty()) {
-            this.tracingContext.enterAgent(); // 进入agent代码执行范围
-            currentHookRule = HookRuleUtils.getHookRule(cls, executable);
-            if (currentHookRule.getIn().contains("O")) {
-                callerHash = caller.hashCode();
+        try {
+            int callerHash = 0;
+            HookRule currentHookRule = null;
+            if (this.tracingContext.isValidPropagator() && !this.tracingContext.isTaintPoolEmpty()) {
+                this.tracingContext.enterAgent(); // 进入agent代码执行范围
+                currentHookRule = HookRuleUtils.getHookRule(cls, executable);
+                if (currentHookRule.getIn().contains("O")) {
+                    callerHash = caller.hashCode();
+                }
+                this.tracingContext.exitAgent(); // 退出agent代码执行范围
             }
-            this.tracingContext.exitAgent(); // 退出agent代码执行范围
+            originalCaller.callerHash = callerHash;
+            originalCaller.hookRule = currentHookRule;
+            return originalCaller;
+        } catch (Exception e) {
+            System.out.println(e);
+            return originalCaller;
         }
-        originalCaller.callerHash = callerHash;
-        originalCaller.hookRule = currentHookRule;
-        return originalCaller;
     }
 
     @Override
     public void exitPropagator(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret, OriginCaller originalCaller) {
-        // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
-        if (this.tracingContext.isValidPropagator()) {
-            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
+        try {
+            // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
+            if (this.tracingContext.isValidPropagator()) {
+                trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
+            }
+            this.tracingContext.exitPropagator();
+        } catch (Exception e) {
+            this.tracingContext.exitPropagator();
+            System.out.println(e.getMessage());
         }
-        this.tracingContext.exitPropagator();
+
     }
 
     @Override

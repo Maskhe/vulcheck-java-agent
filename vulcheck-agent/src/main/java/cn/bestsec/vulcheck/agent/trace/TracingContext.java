@@ -177,6 +177,9 @@ public class TracingContext {
     }
 
     public void addTaint(Taint taint) {
+        if (isHitTaintPool(taint.getHash())) {
+            return;
+        }
         this.taintPool.get().put(taint.getHash(), taint);
     }
 

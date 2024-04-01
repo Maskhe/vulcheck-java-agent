@@ -31,8 +31,8 @@ public class PropagatorAdvice {
         dispatcher.exitPropagator(cls, caller, exe, args, ret, originalCaller);
 
 
-//        if (throwable != null) {
-//            System.out.println("test"+ throwable.getMessage());
-//        }
+        if (throwable != null) {
+            System.out.println(throwable.getMessage());
+        }
     }
 }

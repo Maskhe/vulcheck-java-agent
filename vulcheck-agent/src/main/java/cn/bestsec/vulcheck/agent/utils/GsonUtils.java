@@ -32,8 +32,8 @@ public class GsonUtils {
     public static String toJson(Object src) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         MethodEventSerializer methodEventSerializer = new MethodEventSerializer();
-        gsonBuilder.registerTypeAdapter(MethodEvent.class, methodEventSerializer);
         TracingContextSerializer tracingContextSerializer = new TracingContextSerializer();
+        gsonBuilder.registerTypeAdapter(MethodEvent.class, methodEventSerializer);
         gsonBuilder.registerTypeAdapter(TracingContext.class, tracingContextSerializer);
         Gson gson = gsonBuilder.create();
         return gson.toJson(src);
