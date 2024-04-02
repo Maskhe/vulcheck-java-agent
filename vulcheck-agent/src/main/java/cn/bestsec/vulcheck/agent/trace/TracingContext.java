@@ -79,19 +79,19 @@ public class TracingContext {
     }
 
     /**
-     * 判断一个节点是否为有效sink节点，确保嵌套在source节点内的sink点不执行hook逻辑
-     * @return boolean
-     */
-    public boolean isValidSink() {
-        return this.agentDepth == 0 && this.entryDepth == 1 && this.sourceDepth == 0 && this.sinkDepth == 1;
-    }
-
-    /**
      * 判断一个节点是否为有效传播节点，确保嵌套在source、propagator、sink节点内的传播节点不执行hook逻辑
      * @return boolean
      */
     public boolean isValidPropagator() {
         return this.agentDepth == 0 && this.entryDepth == 1 && this.sourceDepth == 0 && this.propagatorDepth == 1 && this.sinkDepth == 0;
+    }
+
+    /**
+     * 判断一个节点是否为有效sink节点，确保嵌套在source节点内的sink点不执行hook逻辑
+     * @return boolean
+     */
+    public boolean isValidSink() {
+        return this.agentDepth == 0 && this.entryDepth == 1 && this.sourceDepth == 0 && this.sinkDepth == 1;
     }
 
     /**
@@ -198,11 +198,13 @@ public class TracingContext {
         this.segment.remove();
     }
 
-//    public void clearThreadState() {
-//        this.clearTaintPool();
-//        this.clearSegment();
-//        this.currentSpanID = 0;
-//    }
+    public void clearState() {
+        this.clearTaintPool();
+        this.clearSegment();
+        this.currentSpanID = 0;
+        this.propagatorDepth = 0;
+        this.agentDepth = 0;
+    }
 
     /**
      * 扣减操作，在springboot启动过程中发现propagatorDepth经常被扣减为负数，推测时由于多线程导致的，解决方案参考Dongtai-agent-java

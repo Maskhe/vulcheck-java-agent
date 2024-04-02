@@ -8,7 +8,7 @@ import cn.bestsec.vulcheck.agent.rule.TaintPositions;
 import cn.bestsec.vulcheck.agent.trace.MethodEvent;
 import cn.bestsec.vulcheck.agent.trace.Taint;
 import cn.bestsec.vulcheck.agent.trace.TracingContext;
-import cn.bestsec.vulcheck.agent.trace.TracingContextManager;
+import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import cn.bestsec.vulcheck.agent.utils.HookRuleUtils;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.OriginCaller;
@@ -16,7 +16,6 @@ import org.tinylog.Logger;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 /**
  * 分发器实现类
@@ -58,11 +57,15 @@ public class DispatcherImpl implements Dispatcher {
             for (TaintPosition taintPosition : sources.getPositions()) {
                 Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                 int taintHash;
-                if (taintPosition.getPositionType().equals(PositionTypeEnum.CALLER) && nodeType.equals(NodeTypeEnum.PROPAGATOR)) {
+                if (taintPosition.getPositionType().equals(PositionTypeEnum.CALLER) && nodeType.equals(NodeTypeEnum.PROPAGATOR) && originCaller != null) {
                     // 传播节点的caller对象的hash在onmethodenter阶段生成
                     taintHash = originCaller.callerHash;
                 } else {
-                    taintHash = taintValue.hashCode();
+                    if (taintValue != null) {
+                        taintHash = HashUtils.calcHashCode(taintValue);
+                    } else {
+                        taintHash = 0;
+                    }
                 }
                 if (this.tracingContext.isHitTaintPool(taintHash)) {
                     sourceTaints.add(new Taint(taintValue, taintHash));
@@ -198,7 +201,6 @@ public class DispatcherImpl implements Dispatcher {
         if (!nodeType.equals(NodeTypeEnum.SOURCE) && this.tracingContext.isTaintPoolEmpty()) {
             return;
         }
-        this.tracingContext.enterAgent(); // 进入Agent代码执行范围
         // todo: 这里应该需要返回真是被执行的方法的signature信息，存储到MethodEvent中，并最终上报的服务端进行调用链展示
         HookRule currentHookRule = HookRuleUtils.getHookRule(cls, exe);
         if (currentHookRule == null) {
@@ -207,7 +209,6 @@ public class DispatcherImpl implements Dispatcher {
         TaintPositions sources = currentHookRule.getTaintSources();
         TaintPositions targets = currentHookRule.getTaintTargets();
         captureMethodState(sources, targets, caller, args, ret, nodeType, originCaller, currentHookRule);
-        this.tracingContext.exitAgent(); // 退出Agent代码执行范围
     }
     @Override
     public void enterEntry() {
@@ -225,7 +226,7 @@ public class DispatcherImpl implements Dispatcher {
         this.tracingContext.exitAgent();
 //        this.vulCheckContext.report(segmentJson);
         this.tracingContext.exitEntry();
-        this.vulCheckContext.getTracingContextManager().destoryContext(); // 清理本次请求的context
+        this.tracingContext.clearState();
         Logger.info("离开entry");
     }
 
@@ -256,7 +257,7 @@ public class DispatcherImpl implements Dispatcher {
                 this.tracingContext.enterAgent(); // 进入agent代码执行范围
                 currentHookRule = HookRuleUtils.getHookRule(cls, executable);
                 if (currentHookRule.getIn().contains("O")) {
-                    callerHash = caller.hashCode();
+                    callerHash = HashUtils.calcHashCode(caller);
                 }
                 this.tracingContext.exitAgent(); // 退出agent代码执行范围
             }
@@ -264,7 +265,6 @@ public class DispatcherImpl implements Dispatcher {
             originalCaller.hookRule = currentHookRule;
             return originalCaller;
         } catch (Exception e) {
-            System.out.println(e);
             return originalCaller;
         }
     }
@@ -274,10 +274,13 @@ public class DispatcherImpl implements Dispatcher {
         try {
             // fix: 在退出的时候捕获caller会有问题，因为此时的caller已经是被当前方法修改过后的caller了，例如对于StringBuilder.append(java.lang.String)方法，
             if (this.tracingContext.isValidPropagator()) {
+                this.tracingContext.enterAgent();
                 trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, exe, args, ret, originalCaller);
+                this.tracingContext.exitAgent();
             }
             this.tracingContext.exitPropagator();
         } catch (Exception e) {
+            this.tracingContext.exitAgent();
             this.tracingContext.exitPropagator();
             System.out.println(e.getMessage());
         }
@@ -287,7 +290,9 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void exitPropagatorWithoutThis(Class<?> cls, Executable executable, Object[] args, Object ret) {
         if (this.tracingContext.isValidPropagator()) {
+            this.tracingContext.enterAgent(); // 进入Agent代码执行范围
             trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
+            this.tracingContext.exitAgent(); // 推出Agent代码执行范围
         }
         this.tracingContext.exitPropagator();
     }
@@ -311,7 +316,9 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
         if (this.tracingContext.isValidPropagator()) {
+            this.tracingContext.enterAgent();
             trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, null, null);
+            this.tracingContext.exitAgent();
         }
 
         this.tracingContext.exitPropagator();

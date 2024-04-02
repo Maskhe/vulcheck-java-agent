@@ -1,12 +1,14 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.utils.HashUtils;
+
 /**
  * 污点的封装对象
  */
 public class Taint {
     public Taint(Object value) {
         this.value = value;
-        this.hash = value.hashCode();
+        this.hash = HashUtils.calcHashCode(value);
     }
 
     public Taint(Object value, int hash) {
