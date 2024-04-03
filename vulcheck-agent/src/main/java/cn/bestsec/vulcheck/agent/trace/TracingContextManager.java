@@ -6,7 +6,7 @@ import cn.bestsec.vulcheck.agent.utils.GsonUtils;
  * 管理TracingContext的生命周期
  */
 public class TracingContextManager {
-    private final InheritableThreadLocal<TracingContext> context = new InheritableThreadLocal<>();
+    private final ThreadLocal<TracingContext> context = new ThreadLocal<>();
 
     /**
      * 获取单例TracingContext对象
@@ -14,8 +14,7 @@ public class TracingContextManager {
      */
     public  TracingContext getContext() {
         if(context.get() == null) {
-            Segment segment = new Segment("");
-            TracingContext tracingContext = new TracingContext(segment);
+            TracingContext tracingContext = new TracingContext(new Segment(""));
             context.set(tracingContext);
         }
         return context.get();

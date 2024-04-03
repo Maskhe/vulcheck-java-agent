@@ -111,6 +111,9 @@ public class VulCheckAgent {
             case SANITIZER:
                 return Advice.to(SanitizerAdvice.class).on(elementMatcher);
             default:
+                if (!hookRule.getIn().contains("O")) {
+                    return Advice.to(SinkWithoutThisAdvice.class).on(elementMatcher);
+                }
                 return Advice.to(SinkAdvice.class).on(elementMatcher);
         }
     }

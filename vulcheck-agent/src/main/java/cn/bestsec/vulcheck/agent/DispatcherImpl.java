@@ -13,9 +13,9 @@ import cn.bestsec.vulcheck.agent.utils.HookRuleUtils;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.OriginCaller;
 import org.tinylog.Logger;
-
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 分发器实现类
@@ -31,6 +31,14 @@ public class DispatcherImpl implements Dispatcher {
         this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext();
     }
 
+    /**
+     * 根据位置获取污点对象
+     * @param position 污点位置
+     * @param caller 被插桩方法的this对象
+     * @param args 被插桩方法的参数
+     * @param ret 被插桩方法的返回值
+     * @return 污点对象
+     */
     private Object getTaintByPosition(TaintPosition position, Object caller, Object[] args, Object ret) {
         Object taintValue;
         switch (position.getPositionType()) {
@@ -49,33 +57,53 @@ public class DispatcherImpl implements Dispatcher {
         }
         return taintValue;
     }
+
+    private boolean isHitTaintPool(Object obj, List<Taint> sourceTaints) {
+        if (obj == null) {
+            return false;
+        }
+        int objHash = HashUtils.calcHashCode(obj);
+        if (this.tracingContext.isHitTaintPool(objHash)) {
+            sourceTaints.add(new Taint(obj, objHash));
+            return true;
+        }
+        // 复合数据类型进行递归拆分
+        if (obj instanceof Object[]) {
+            Object[] taintArray = (Object[]) obj;
+            for (Object taintObj : taintArray) {
+                if (isHitTaintPool(taintObj, sourceTaints)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void captureMethodState(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, OriginCaller originCaller, HookRule hookRule) {
         boolean isHitTaintPool = false;
         ArrayList<Taint> sourceTaints = new ArrayList<>();
-
         if (sources != null) {
             for (TaintPosition taintPosition : sources.getPositions()) {
+                // todo: 复合数据类型，需要拆分判断其子元素是否在污点池中。
                 Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                 int taintHash;
                 if (taintPosition.getPositionType().equals(PositionTypeEnum.CALLER) && nodeType.equals(NodeTypeEnum.PROPAGATOR) && originCaller != null) {
                     // 传播节点的caller对象的hash在onmethodenter阶段生成
                     taintHash = originCaller.callerHash;
-                } else {
-                    if (taintValue != null) {
-                        taintHash = HashUtils.calcHashCode(taintValue);
-                    } else {
-                        taintHash = 0;
+                    if (this.tracingContext.isHitTaintPool(taintHash)) {
+                        sourceTaints.add(new Taint(taintValue, taintHash));
                     }
+                } else {
+                    isHitTaintPool(taintValue, sourceTaints);
                 }
-                if (this.tracingContext.isHitTaintPool(taintHash)) {
-                    sourceTaints.add(new Taint(taintValue, taintHash));
+
+                if (sources.getRelation().equals("AND")) {
+                    isHitTaintPool = sources.getPositions().size() <= sourceTaints.size();
+                } else {
+                    isHitTaintPool = !sourceTaints.isEmpty();
                 }
             }
-            if (sources.getRelation().equals("AND")) {
-                isHitTaintPool = sources.getPositions().size() == sourceTaints.size();
-            } else {
-                isHitTaintPool = !sourceTaints.isEmpty();
-            }
+
         }
 
         ArrayList<Taint> targetTaints = new ArrayList<>();
@@ -101,7 +129,9 @@ public class DispatcherImpl implements Dispatcher {
                     for (TaintPosition taintPosition : targets.getPositions()) {
                         Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                         Logger.debug("当前污点值：" + taintValue);
+
                         Taint taint = new Taint(taintValue);
+                        Logger.debug("当前污点hash:" + taint.getHash());
                         this.tracingContext.addTaint(taint); // 放入污点池
                         targetTaints.add(taint);
                     }
@@ -121,81 +151,6 @@ public class DispatcherImpl implements Dispatcher {
                 break;
         }
     }
-//    private void parseArgPostion(TaintPositions sources, TaintPositions targets, Object caller, Object[] args, Object ret, NodeTypeEnum nodeType, HashSet<Object> taintPool, String uniqueMethod) {
-//        boolean isHitTaintPool = false;
-//        if (sources == null) {
-//
-//        } else if (inParam.startsWith("p")){
-//            inParam = inParam.replace("p", "");
-//            for (String paramPosition : inParam.split(",")){
-//                Object taintValue = args[Integer.parseInt(paramPosition)-1];
-//                // todo: 其他复合类型检查，例如Map、List类型
-//                if (taintValue instanceof Object[]) {
-//                    for (Object taintValueItem : (Object[])taintValue) {
-//                        if (taintPool.contains(System.identityHashCode(taintValueItem))) {
-//                            if (nodeType == NodeTypeEnum.SINK) {
-//                                System.out.println("当前污点值：" + taintValue);
-//                                System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
-//                            }
-//                            isHitTaintPool = true;
-//                        }
-//                    }
-//                }
-//                if (taintPool.contains(System.identityHashCode(taintValue))) {
-//                    if (nodeType == NodeTypeEnum.SINK) {
-//                        System.out.println("当前污点值：" + taintValue);
-//                        System.out.println("当前污点hash：" + System.identityHashCode(taintValue));
-//                    }
-//
-//                    isHitTaintPool = true;
-//                }
-//            }
-//        }else if(inParam.startsWith("o")){
-//            if (taintPool.contains(System.identityHashCode(caller))) {
-//                isHitTaintPool = true;
-//            }
-//        }
-//        if (isHitTaintPool || nodeType == NodeTypeEnum.SOURCE) {
-//            System.out.println(uniqueMethod);
-//        }
-//        if (nodeType == NodeTypeEnum.SINK && isHitTaintPool) {
-//            System.out.println("发现漏洞！");
-//        }
-//        if (nodeType == NodeTypeEnum.SOURCE || (isHitTaintPool && nodeType == NodeTypeEnum.PROPAGATOR)) {
-//            // todo:出参如果是复合类型，也需要拆分
-//            if (outParam.contains("&")) {
-//                String[] params = outParam.split("&");
-//                for (String param : params) {
-//                    if (param.equals("o")) {
-//                        taintPool.add(System.identityHashCode(caller));
-//                    } else if (param.equals("ret") || param.equals("r")) {
-//                        taintPool.add(System.identityHashCode(ret));
-//                    } else if (param.startsWith("p")) {
-//                        String paramPosition = param.replace("p", "");
-//                        for (String position: paramPosition.split(",")) {
-//                            taintPool.add(System.identityHashCode(args[Integer.parseInt(position)-1]));
-//                        }
-//                    }
-//                }
-//            } else if (outParam.equals("ret") || outParam.equalsIgnoreCase("r")) {
-//                taintPool.add(System.identityHashCode(ret));
-//            } else if (outParam.equalsIgnoreCase("o")) {
-//                taintPool.add(System.identityHashCode(caller));
-//            } else if (outParam.startsWith("p")) {
-//                outParam = outParam.replace("p", "");
-//                for (String paramPosition : outParam.split(",")){
-//                    Object taintValue = args[Integer.parseInt(paramPosition)-1];
-//                    // todo: 其他复合类型检查，例如Map、List类型
-//                    if (taintValue instanceof Object[]) {
-//                        for (Object taintValueItem : (Object[])taintValue) {
-//                            taintPool.add(System.identityHashCode(taintValueItem));
-//                        }
-//                    }
-//                    taintPool.add(System.identityHashCode(taintValue));
-//                }
-//            }
-//        }
-//    }
     public void trackMethodCall(NodeTypeEnum nodeType, Class<?> cls, Object caller, Executable exe, Object[] args,
                                 Object ret, OriginCaller originCaller) {
         if (!nodeType.equals(NodeTypeEnum.SOURCE) && this.tracingContext.isTaintPoolEmpty()) {
@@ -213,37 +168,47 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public void enterEntry() {
         Logger.info("进入entry");
-        this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext(); // 初始化本次请求的context
+        this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext();
+//        this.tracingContext.init(); // 初始化本次请求的context
         this.tracingContext.enterEntry();
     }
 
     @Override
     public void exitEntry() {
-        this.tracingContext.enterAgent();
+//        this.tracingContext.enterAgent();
         // todo: 发送segment到VulScanner进行分析
 //        String segmentJson = this.tracingContext.toJson();
 //        Logger.info(segmentJson);
-        this.tracingContext.exitAgent();
+//        this.tracingContext.exitAgent();
 //        this.vulCheckContext.report(segmentJson);
         this.tracingContext.exitEntry();
-        this.tracingContext.clearState();
+        if (this.tracingContext.isValidEntry()) {
+            this.tracingContext.reset(); // 重置tracingContext状态
+        }
         Logger.info("离开entry");
+
     }
 
     @Override
     public void enterSource() {
+        this.tracingContext.enterAgent();
         Logger.debug("进入source节点");
+        this.tracingContext.exitAgent();
         this.tracingContext.enterSource();
     }
 
     @Override
     public void exitSource(Class<?> cls, Object caller, Executable exe, Object[] args, Object ret) {
         if (this.tracingContext.isValidSource()) {
+            this.tracingContext.enterAgent();
             trackMethodCall(NodeTypeEnum.SOURCE, cls, caller, exe, args, ret, null);
+            this.tracingContext.exitAgent();
         }
         // 下面两行代码不能调换位置，因为Logger.debug里有很多字符串拼接操作，如果调换了位置，如果在trackmethodcall打印命中的hookrule,
         // 会发现source节点内还出现了很多传播节点调用，这在我的设计里是不允许的
+        this.tracingContext.enterAgent();
         Logger.debug("退出source节点");
+        this.tracingContext.exitAgent();
         this.tracingContext.exitSource();
     }
     @Override
@@ -289,12 +254,18 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitPropagatorWithoutThis(Class<?> cls, Executable executable, Object[] args, Object ret) {
-        if (this.tracingContext.isValidPropagator()) {
-            this.tracingContext.enterAgent(); // 进入Agent代码执行范围
-            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
-            this.tracingContext.exitAgent(); // 推出Agent代码执行范围
+        try {
+            if (this.tracingContext.isValidPropagator()) {
+                this.tracingContext.enterAgent(); // 进入Agent代码执行范围
+                trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, null, executable, args, ret, null);
+                this.tracingContext.exitAgent(); // 推出Agent代码执行范围
+            }
+            this.tracingContext.exitPropagator();
+        } catch (Exception e) {
+            this.tracingContext.exitAgent();
+            this.tracingContext.exitPropagator();
         }
-        this.tracingContext.exitPropagator();
+
     }
 
 
@@ -315,13 +286,18 @@ public class DispatcherImpl implements Dispatcher {
 
     @Override
     public void exitConstructorPropagator(Class<?> cls, Object caller, Executable executable, Object[] args) {
-        if (this.tracingContext.isValidPropagator()) {
-            this.tracingContext.enterAgent();
-            trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, null, null);
+        try {
+            if (this.tracingContext.isValidPropagator()) {
+                this.tracingContext.enterAgent();
+                trackMethodCall(NodeTypeEnum.PROPAGATOR, cls, caller, executable, args, null, null);
+                this.tracingContext.exitAgent();
+            }
+            this.tracingContext.exitPropagator();
+        } catch (Exception e) {
             this.tracingContext.exitAgent();
+            this.tracingContext.exitPropagator();
         }
 
-        this.tracingContext.exitPropagator();
     }
 
 

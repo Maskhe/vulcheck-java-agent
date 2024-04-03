@@ -1,6 +1,7 @@
 package cn.bestsec.vulcheck.agent.trace;
 
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
+import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import com.google.gson.Gson;
 import lombok.Data;
 import org.omg.PortableInterceptor.INACTIVE;
@@ -55,10 +56,25 @@ public class TracingContext {
         this.taintPool.set(new HashMap<>());
     }
 
+    public void init() {
+        this.globalID = UUID.randomUUID().toString();
+        this.initTaintPool();
+        this.initSegment();
+        this.sourceDepth = 0;
+        this.propagatorDepth = 0;
+        this.agentDepth = 0;
+        this.sinkDepth = 0;
+        this.sanitizerDepth = 0;
+        this.entryDepth = 0;
+    }
+
     public void addMethodToSegment(Span span) {
         this.segment.get().addSpan(span);
     }
 
+    public boolean isValidEntry() {
+        return this.entryDepth == 1;
+    }
     public void enterEntry() {
         this.entryDepth ++;
     }
@@ -169,11 +185,15 @@ public class TracingContext {
     }
 
     public boolean isTaintPoolEmpty() {
-        return this.taintPool.get().isEmpty();
+        return this.taintPool.get() == null || this.taintPool.get().isEmpty();
     }
 
     public boolean isHitTaintPool(int taintHash) {
         return this.taintPool.get().containsKey(taintHash);
+    }
+
+    public boolean isHitTaintPool(Object obj) {
+        return this.taintPool.get().containsKey(HashUtils.calcHashCode(obj));
     }
 
     public void addTaint(Taint taint) {
@@ -198,12 +218,12 @@ public class TracingContext {
         this.segment.remove();
     }
 
-    public void clearState() {
+    public void reset() {
         this.clearTaintPool();
         this.clearSegment();
         this.currentSpanID = 0;
-        this.propagatorDepth = 0;
-        this.agentDepth = 0;
+//        this.propagatorDepth = 0;
+//        this.agentDepth = 0;
     }
 
     /**
