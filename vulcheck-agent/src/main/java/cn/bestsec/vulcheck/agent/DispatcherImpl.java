@@ -131,7 +131,7 @@ public class DispatcherImpl implements Dispatcher {
                         Logger.debug("当前污点值：" + taintValue);
 
                         Taint taint = new Taint(taintValue);
-                        Logger.debug("当前污点hash:" + taint.getHash());
+//                        Logger.debug("当前污点hash:" + taint.getHash());
                         this.tracingContext.addTaint(taint); // 放入污点池
                         targetTaints.add(taint);
                     }
