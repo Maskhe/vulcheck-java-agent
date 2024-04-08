@@ -78,6 +78,7 @@ public class VulCheckAgent {
 //        ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1);
 //        executor.scheduleAtFixedRate(new Reporter(), 10, 10, TimeUnit.SECONDS);
         agentBuilder.installOn(inst);
+        Logger.info("Agent Started");
     }
 
     public static AsmVisitorWrapper buildMethodMatchers(HookRule hookRule, TypeDescription typeDescription) {

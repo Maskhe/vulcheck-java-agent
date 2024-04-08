@@ -22,9 +22,9 @@ public class VulCheckListener implements AgentBuilder.Listener {
     @Override
     public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, boolean b, DynamicType dynamicType) {
         TracingContext tracingContext = VulCheckContext.newInstance().getTracingContextManager().getContext();
-//        tracingContext.enterAgent();
-//        Logger.info(String.format("Transform %s ...", typeDescription.toString()));
-//        tracingContext.exitAgent();
+        tracingContext.enterAgent();
+        Logger.info(String.format("Transform %s ...", typeDescription.toString()));
+        tracingContext.exitAgent();
     }
 
     @Override
