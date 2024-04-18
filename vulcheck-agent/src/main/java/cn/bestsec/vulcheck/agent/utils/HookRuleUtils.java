@@ -8,17 +8,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+/**
+ * 处理HookRule对象的工具类
+ * @author hjx
+ * @since 2024/3/28
+ */
 public class HookRuleUtils {
-    public static HookRule getHookRule(Class<?> cls, Executable exe) {
+    /**
+     * 根据类和方法信息获取对应的HookRule对象
+     * @param uniqueMethod 方法全名
+     * @return HookRule
+     */
+    public static HookRule getHookRule(String uniqueMethod) {
         VulCheckContext vulCheckContext = VulCheckContext.newInstance();
-        String clsName = cls.getName();
-        String methodName = exe.getName();
-        String paramTypes = Arrays.stream(exe.getParameterTypes()).map(Class::getCanonicalName).collect(Collectors.joining(", "));
-        String uniqueMethod;
-        if (clsName.equals(methodName)) {
-            methodName = "<init>";
-        }
-        uniqueMethod = String.format("%s.%s(%s)", clsName, methodName, paramTypes);
         HashMap<String, HookRule> matchedHookNodes = vulCheckContext.getMatchedHookNodes();
         return matchedHookNodes.get(uniqueMethod);
     }

@@ -29,6 +29,8 @@ public class MethodEvent implements Span  {
      */
     private HookRule hookRule;
 
+    private String methodFullName;
+
     ArrayList<Taint> sourceTaints;
     ArrayList<Taint> targetTaints;
 

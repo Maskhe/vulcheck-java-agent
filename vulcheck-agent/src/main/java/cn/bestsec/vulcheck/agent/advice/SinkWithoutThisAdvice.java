@@ -16,7 +16,6 @@ public class SinkWithoutThisAdvice {
     public static void enter(@Advice.Origin Class<?> cls, @Advice.Origin Executable exe, @Advice.AllArguments Object[] args){
         Dispatcher dispatcher = DispatcherHandler.getDispatcher();
         dispatcher.enterSink(cls, null, exe, args);
-
     }
 
     @Advice.OnMethodExit

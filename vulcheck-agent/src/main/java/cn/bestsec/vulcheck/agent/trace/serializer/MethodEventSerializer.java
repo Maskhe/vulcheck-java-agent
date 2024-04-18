@@ -22,16 +22,23 @@ public class MethodEventSerializer implements JsonSerializer<MethodEvent> {
         jsonObject.addProperty("nodeType", methodEvent.getNodeType().getName());
         jsonObject.addProperty("eventType", methodEvent.getEventType());
         jsonObject.addProperty("invokeTime", methodEvent.getInvokeTime());
+        jsonObject.addProperty("method", methodEvent.getMethodFullName());
         JsonArray jsonArray = new JsonArray();
         ArrayList<Taint> taints = methodEvent.getSourceTaints();
         for (Taint taint : taints) {
-            jsonArray.add(jsonSerializationContext.serialize(taint));
+            JsonObject sourceTaint = new JsonObject();
+            sourceTaint.addProperty("value", taint.getValueString());
+            sourceTaint.addProperty("hash", taint.getHash());
+            jsonArray.add(sourceTaint);
         }
         jsonObject.add("sourceTaints", jsonArray);
         taints = methodEvent.getTargetTaints();
         jsonArray = new JsonArray();
         for (Taint taint : taints) {
-            jsonArray.add(jsonSerializationContext.serialize(taint));
+            JsonObject targetTaint = new JsonObject();
+            targetTaint.addProperty("value", taint.getValueString());
+            targetTaint.addProperty("hash", taint.getHash());
+            jsonArray.add(targetTaint);
         }
         jsonObject.add("targetTaints", jsonArray);
         return jsonObject;

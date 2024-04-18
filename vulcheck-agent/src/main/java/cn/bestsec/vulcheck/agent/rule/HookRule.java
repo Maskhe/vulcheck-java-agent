@@ -68,6 +68,11 @@ public class HookRule {
         this.tracked = tracked;
     }
 
+    /**
+     * 解析HookRule的positions字符串为TaintPositions对象
+     * @param positions 字符串格式的污点位置信息
+     * @return TaintPositions
+     */
     public static TaintPositions parsePositions(String positions) {
         if (positions.isEmpty()) {
             return null;
@@ -79,9 +84,25 @@ public class HookRule {
         }
     }
 
+    /**
+     * 解析复杂的污点位置字符串，例如：{
+     * "relation": "and",
+     * "positions": [
+     *     {"position": "P1", "track": false, "bad-value-regex": "location"},
+     *     {"position": "P2", "track": true}
+     * ]}
+     * @param positions 污点位置字符串
+     * @return TaintPositions
+     */
     public static TaintPositions parseComplexPositions(String positions) {
         return GsonUtils.fromJson(positions, TaintPositions.class);
     }
+
+    /**
+     * 解析简单的污点位置, 例如： P1|P2、O、O&P1
+     * @param positions 污点位置字符串
+     * @return TaintPositions
+     */
     public static TaintPositions parseSimplePositions(String positions) {
         TaintPositions taintPositions = new TaintPositions();
         String[] positionArray;
@@ -101,6 +122,12 @@ public class HookRule {
         }
         return taintPositions;
     }
+
+    /**
+     * 解析单个污点位置，例如：P1、P2、R、O
+     * @param position 污点位置
+     * @return TaintPosition对象
+     */
     public static TaintPosition parseSinglePosition(String position) {
         String positionType = position.substring(0,1).toUpperCase();
         TaintPosition taintPosition = new TaintPosition();
@@ -117,5 +144,13 @@ public class HookRule {
                 break;
         }
         return taintPosition;
+    }
+
+    /**
+     * 获取方法的全限定名称
+     * @return 方法的全限定名
+     */
+    public String getFullName() {
+        return String.format("%s.%s", this.getClassName(), this.getSignature());
     }
 }

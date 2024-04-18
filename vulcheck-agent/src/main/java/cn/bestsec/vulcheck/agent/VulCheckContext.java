@@ -1,19 +1,15 @@
 package cn.bestsec.vulcheck.agent;
 
+import cn.bestsec.vulcheck.agent.enums.AgentState;
 import cn.bestsec.vulcheck.agent.rule.HookRule;
 import cn.bestsec.vulcheck.agent.trace.TracingContextManager;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
+import cn.bestsec.vulcheck.agent.utils.HttpUtils;
 import cn.bestsec.vulcheck.spy.DispatcherHandler;
 import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * VulCheck上下文，单例对象，存储着污点池、hook规则等关键信息供漏洞检测时使用
@@ -26,6 +22,7 @@ public class VulCheckContext {
     private HashMap<String, HookRule> matchedHookNodes;
     private TracingContextManager tracingContextManager;
     private Queue<String> segmentQueue;
+    private AgentState agentState;
 
     private VulCheckContext(HashMap<String, ArrayList<HookRule>> hookRules){
         this.hookRules = hookRules;
@@ -33,34 +30,22 @@ public class VulCheckContext {
         this.segmentQueue = new LinkedList<>();
         DispatcherHandler.setDispatcher(new DispatcherImpl(this));
         this.matchedHookNodes = new HashMap<>();
+        if (this.hookRules.isEmpty()) {
+            this.agentState = AgentState.START_FAILED;
+        } else {
+            this.agentState = AgentState.STARTING;
+        }
     }
 
     private static class VulCheckContextHolder{
         private static HashMap<String, ArrayList<HookRule>> getHookRules(){
             // 读取服务端hook规则
             String json = "";
-            URL uri = null;
-            try {
-                uri = new URL("http://localhost:8000/hookrulesmanage/?inUse=1");
-                HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
-                connection.setRequestMethod("GET");
-                connection.connect();
-                int responseCode = connection.getResponseCode();
-                if(responseCode == HttpURLConnection.HTTP_OK){
-                    InputStream inputStream = connection.getInputStream();
-                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                    String line = "";
-                    StringBuilder response = new StringBuilder();
-                    while((line = bufferedReader.readLine()) != null){
-                        response.append(line).append("\n");
-                    }
-                    json = response.toString();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            String response = HttpUtils.sendGetRequest("http://localhost:8000/hookrulesmanage/?inUse=1");
+            if (response == null || response.contains("Error")) {
+                return new HashMap<>();
             }
-
+            json = response;
             return GsonUtils.fromJson(json, new TypeToken<HashMap<String, List<HookRule>>>(){}.getType());
         }
         private static final VulCheckContext INSTANCE = new VulCheckContext(getHookRules());

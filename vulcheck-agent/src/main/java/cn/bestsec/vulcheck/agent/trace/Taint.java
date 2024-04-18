@@ -4,6 +4,7 @@ import cn.bestsec.vulcheck.agent.utils.HashUtils;
 
 /**
  * 污点的封装对象
+ * @author hjx
  */
 public class Taint {
     public Taint(Object value) {
@@ -27,6 +28,10 @@ public class Taint {
     }
 
     public String toJson() {
-        return String.format("{\"value\":\"%s\", \"hash\":\"%d\"}", value.toString(), hash);
+        return String.format("{\"value\":\"%s\", \"hash\": %d}", value.toString(), hash);
+    }
+
+    public String toString() {
+        return String.format("{\"value\":\"%s\", \"hash\": %d}", value.toString(), hash);
     }
 }
