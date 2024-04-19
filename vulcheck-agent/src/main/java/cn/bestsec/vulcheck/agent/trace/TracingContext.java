@@ -243,4 +243,9 @@ public class TracingContext {
     public String toJson() {
         return GsonUtils.toJson(this);
     }
+
+    public String toString() {
+        return String.format("{\"globalID\": \"%s\", \"currentSpanID\", \"%s\", \"segment\": \"%s\"}", this.globalID,
+                this.currentSpanID, this.segment.get().toJson());
+    }
 }

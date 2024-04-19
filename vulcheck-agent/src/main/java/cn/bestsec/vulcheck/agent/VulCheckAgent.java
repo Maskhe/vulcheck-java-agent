@@ -64,7 +64,7 @@ public class VulCheckAgent {
         for(Map.Entry<String, ArrayList<HookRule>> entry: vulCheckContext.getHookRules().entrySet()){
             String className = entry.getKey();
             for(HookRule hookRule : entry.getValue()){
-                Logger.info(hookRule);
+//                Logger.info(hookRule);
                 transformer = (builder, typeDescription, classLoader, javaModule, protectionDomain) -> {
                     builder = builder.visit(buildMethodMatchers(hookRule, typeDescription));
                     return builder;

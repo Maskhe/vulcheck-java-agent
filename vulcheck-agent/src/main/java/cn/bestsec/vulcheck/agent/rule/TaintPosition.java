@@ -15,4 +15,5 @@ public class TaintPosition {
     private int index;
     private String badValueRegex;
     private boolean tracked;
+    private String positionStr;
 }

@@ -29,6 +29,7 @@ public class MethodEventSerializer implements JsonSerializer<MethodEvent> {
             JsonObject sourceTaint = new JsonObject();
             sourceTaint.addProperty("value", taint.getValueString());
             sourceTaint.addProperty("hash", taint.getHash());
+            sourceTaint.addProperty("position", taint.getPosition());
             jsonArray.add(sourceTaint);
         }
         jsonObject.add("sourceTaints", jsonArray);
@@ -38,6 +39,7 @@ public class MethodEventSerializer implements JsonSerializer<MethodEvent> {
             JsonObject targetTaint = new JsonObject();
             targetTaint.addProperty("value", taint.getValueString());
             targetTaint.addProperty("hash", taint.getHash());
+            targetTaint.addProperty("position", taint.getPosition());
             jsonArray.add(targetTaint);
         }
         jsonObject.add("targetTaints", jsonArray);

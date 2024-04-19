@@ -66,20 +66,22 @@ public class DispatcherImpl implements Dispatcher {
      * @param sourceTaints 如果obj命中污点池将被存储到这个List对象中
      * @return True | False
      */
-    private boolean isHitTaintPool(Object obj, List<Taint> sourceTaints) {
+    private boolean isHitTaintPool(Object obj, List<Taint> sourceTaints, TaintPosition taintPosition) {
         if (obj == null) {
             return false;
         }
         int objHash = HashUtils.calcHashCode(obj);
         if (this.tracingContext.isHitTaintPool(objHash)) {
-            sourceTaints.add(new Taint(obj, objHash));
+            Taint taint = new Taint(obj, objHash);
+            taint.setTaintPosition(taintPosition); // 记录当前污点到底来自哪个位置
+            sourceTaints.add(taint);
             return true;
         }
-        // 复合数据类型进行递归拆分
+        // 复合数据类型进行递归拆分, String[]类型在bytebuddy下也会变成Object[]类型
         if (obj instanceof Object[]) {
             Object[] taintArray = (Object[]) obj;
             for (Object taintObj : taintArray) {
-                if (isHitTaintPool(taintObj, sourceTaints)) {
+                if (isHitTaintPool(taintObj, sourceTaints, taintPosition)) {
                     return true;
                 }
             }
@@ -99,19 +101,19 @@ public class DispatcherImpl implements Dispatcher {
                     // 这种情况不需要再考虑了，因为java对Object对象的hashcode计算方式是根据地址的
                     taintHash = originCaller.callerHash;
                     if (this.tracingContext.isHitTaintPool(taintHash)) {
-                        sourceTaints.add(new Taint(taintValue, taintHash));
+                        Taint taint = new Taint(taintValue, taintHash);
+                        taint.setTaintPosition(taintPosition);
+                        sourceTaints.add(taint);
                     }
                 } else {
-                    isHitTaintPool(taintValue, sourceTaints);
-                }
-
-                if (sources.getRelation().equals("AND")) {
-                    isHitTaintPool = sources.getPositions().size() <= sourceTaints.size();
-                } else {
-                    isHitTaintPool = !sourceTaints.isEmpty();
+                    isHitTaintPool(taintValue, sourceTaints, taintPosition);
                 }
             }
-
+            if (sources.getRelation().equals("AND")) {
+                isHitTaintPool = sources.getPositions().size() <= sourceTaints.size();
+            } else {
+                isHitTaintPool = !sourceTaints.isEmpty();
+            }
         }
 
         ArrayList<Taint> targetTaints = new ArrayList<>();
@@ -122,6 +124,7 @@ public class DispatcherImpl implements Dispatcher {
                     Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                     Logger.debug("当前污点值：" + taintValue);
                     Taint taint = new Taint(taintValue);
+                    taint.setTaintPosition(taintPosition);
                     targetTaints.add(taint);
                     this.tracingContext.addTaint(taint); // 放入污点池
                 }
@@ -133,12 +136,13 @@ public class DispatcherImpl implements Dispatcher {
             case SANITIZER:
                 if (isHitTaintPool) {
                     Logger.debug("命中规则：" + hookRule);
-                    // todo: 类似于集合这种复合数据类型需要拆分后再加入污点池中吗
+                    // todo: 类似于集合这种复合数据类型需要拆分后再加入污点池中吗 ，答：不需要
                     for (TaintPosition taintPosition : targets.getPositions()) {
                         Object taintValue = getTaintByPosition(taintPosition, caller, args, ret);
                         Logger.debug("当前污点值：" + taintValue);
 
                         Taint taint = new Taint(taintValue);
+                        taint.setTaintPosition(taintPosition);
 //                        Logger.debug("当前污点hash:" + taint.getHash());
                         this.tracingContext.addTaint(taint); // 放入污点池
                         targetTaints.add(taint);
@@ -205,8 +209,8 @@ public class DispatcherImpl implements Dispatcher {
     public void exitEntry() {
 //         todo: 发送segment到VulScanner进行分析
         this.tracingContext.exitEntry();
-//        String segmentJson = this.tracingContext.toJson();
-        String segmentJson = this.tracingContext.getSegment().get().toJson();
+//        String segmentJson = this.tracingContext.getSegment().get().toJson();
+        String segmentJson = this.tracingContext.toJson();
         this.vulCheckContext.report(segmentJson);
         if (this.tracingContext.isValidEntry()) {
             this.tracingContext.reset(); // 重置tracingContext状态
@@ -271,6 +275,7 @@ public class DispatcherImpl implements Dispatcher {
             }
             this.tracingContext.exitPropagator();
         } catch (Exception e) {
+            Logger.error("退出propagator报错：" + e.getMessage());
             this.tracingContext.exitAgent();
             this.tracingContext.exitPropagator();
             System.out.println(e.getMessage());

@@ -25,9 +25,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition = new TaintPosition();
         taintPosition.setPositionType(PositionTypeEnum.PARAM);
         taintPosition.setIndex(1);
+        taintPosition.setPositionStr("P1");
         assertEquals(taintPosition, HookRule.parseSinglePosition("P1"));
         taintPosition.setPositionType(PositionTypeEnum.CALLER);
         taintPosition.setIndex(0);
+        taintPosition.setPositionStr("O");
         assertEquals(taintPosition, HookRule.parseSinglePosition("O"));
     }
 
@@ -45,10 +47,12 @@ public class TaintPositionTest extends TestCase {
         taintPosition.setIndex(1);
         taintPosition.setTracked(false);
         taintPosition.setBadValueRegex("location");
+        taintPosition.setPositionStr("P1");
         TaintPosition taintPosition2 = new TaintPosition();
         taintPosition2.setPositionType(PositionTypeEnum.PARAM);
         taintPosition2.setIndex(2);
         taintPosition2.setTracked(true);
+        taintPosition2.setPositionStr("P2");
         taintPositions.addPosition(taintPosition);
         taintPositions.addPosition(taintPosition2);
         GsonBuilder gsonBuilder = new GsonBuilder();
@@ -65,9 +69,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.PARAM);
         taintPosition1.setIndex(1);
+        taintPosition1.setPositionStr("P1");
         TaintPosition taintPosition2 = new TaintPosition();
         taintPosition2.setPositionType(PositionTypeEnum.PARAM);
         taintPosition2.setIndex(2);
+        taintPosition2.setPositionStr("P2");
         taintPositions.addPosition(taintPosition1);
         taintPositions.addPosition(taintPosition2);
 
@@ -75,6 +81,7 @@ public class TaintPositionTest extends TestCase {
 
         TaintPositions taintPositions1 = new TaintPositions();
         TaintPosition taintPosition = new TaintPosition();
+        taintPosition.setPositionStr("O");
         taintPosition.setPositionType(PositionTypeEnum.CALLER);
         taintPositions1.addPosition(taintPosition);
 
@@ -85,9 +92,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition3 = new TaintPosition();
         taintPosition3.setPositionType(PositionTypeEnum.PARAM);
         taintPosition3.setIndex(1);
+        taintPosition3.setPositionStr("P1");
         TaintPosition taintPosition4 = new TaintPosition();
         taintPosition4.setPositionType(PositionTypeEnum.PARAM);
         taintPosition4.setIndex(2);
+        taintPosition4.setPositionStr("P2");
         taintPositions2.addPosition(taintPosition3);
         taintPositions2.addPosition(taintPosition4);
 
@@ -100,9 +109,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.PARAM);
         taintPosition1.setIndex(1);
+        taintPosition1.setPositionStr("P1");
         TaintPosition taintPosition2 = new TaintPosition();
         taintPosition2.setPositionType(PositionTypeEnum.CALLER);
         taintPosition2.setIndex(0);
+        taintPosition2.setPositionStr("O");
         taintPositions.addPosition(taintPosition1);
         taintPositions.addPosition(taintPosition2);
 
@@ -115,6 +126,7 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.PARAM);
         taintPosition1.setIndex(1);
+        taintPosition1.setPositionStr("P1");
         taintPositions.addPosition(taintPosition1);
 
         assertEquals(taintPositions, HookRule.parseSimplePositions("P1"));
@@ -126,6 +138,7 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.RET);
         taintPosition1.setIndex(0);
+        taintPosition1.setPositionStr("R");
         taintPositions.addPosition(taintPosition1);
 
         assertEquals(taintPositions, HookRule.parseSimplePositions("R"));
@@ -137,9 +150,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.RET);
         taintPosition1.setIndex(0);
+        taintPosition1.setPositionStr("R");
         TaintPosition taintPosition2 = new TaintPosition();
         taintPosition2.setPositionType(PositionTypeEnum.CALLER);
         taintPosition2.setIndex(0);
+        taintPosition2.setPositionStr("O");
         taintPositions.addPosition(taintPosition1);
         taintPositions.addPosition(taintPosition2);
 
@@ -152,9 +167,11 @@ public class TaintPositionTest extends TestCase {
         TaintPosition taintPosition1 = new TaintPosition();
         taintPosition1.setPositionType(PositionTypeEnum.CALLER);
         taintPosition1.setIndex(0);
+        taintPosition1.setPositionStr("O");
         TaintPosition taintPosition2 = new TaintPosition();
         taintPosition2.setPositionType(PositionTypeEnum.PARAM);
         taintPosition2.setIndex(1);
+        taintPosition2.setPositionStr("P1");
         taintPositions.addPosition(taintPosition1);
         taintPositions.addPosition(taintPosition2);
 

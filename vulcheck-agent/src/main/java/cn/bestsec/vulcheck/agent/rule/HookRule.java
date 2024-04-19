@@ -135,12 +135,15 @@ public class HookRule {
             case "P":
                 taintPosition.setPositionType(PositionTypeEnum.PARAM);
                 taintPosition.setIndex(Integer.parseInt(position.substring(1,2)));
+                taintPosition.setPositionStr(position);
                 break;
             case "R":
                 taintPosition.setPositionType(PositionTypeEnum.RET);
+                taintPosition.setPositionStr(position);
                 break;
             case "O":
                 taintPosition.setPositionType(PositionTypeEnum.CALLER);
+                taintPosition.setPositionStr(position);
                 break;
         }
         return taintPosition;
