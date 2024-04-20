@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import com.google.gson.Gson;
@@ -216,6 +217,10 @@ public class TracingContext {
     }
     public void clearSegment() {
         this.segment.remove();
+    }
+
+    public void setHttpRequet(HttpRequest httpRequest) {
+        this.segment.get().setHttpRequest(httpRequest);
     }
 
     public void reset() {

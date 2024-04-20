@@ -8,15 +8,22 @@ import cn.bestsec.vulcheck.agent.rule.TaintPositions;
 import cn.bestsec.vulcheck.agent.trace.MethodEvent;
 import cn.bestsec.vulcheck.agent.trace.Taint;
 import cn.bestsec.vulcheck.agent.trace.TracingContext;
+import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
 import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import cn.bestsec.vulcheck.agent.utils.HookRuleUtils;
+import cn.bestsec.vulcheck.agent.utils.ReflectionUtils;
 import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.OriginCaller;
 import org.tinylog.Logger;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Executable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -197,16 +204,56 @@ public class DispatcherImpl implements Dispatcher {
         TaintPositions targets = currentHookRule.getTaintTargets();
         captureMethodState(sources, targets, caller, args, ret, nodeType, originCaller, currentHookRule, methodEvent);
     }
+
+    public HttpRequest parseRequest(Object request) {
+        HttpRequest httpRequest = new HttpRequest();
+        try {
+            httpRequest.setMethod((String) ReflectionUtils.invoke(request, "getMethod", null));
+            httpRequest.setServerName((String) ReflectionUtils.invoke(request, "getServerName", null));
+            httpRequest.setServerPort((int) ReflectionUtils.invoke(request, "getServerPort", null));
+            httpRequest.setUri((String) ReflectionUtils.invoke(request, "getRequestURI", null));
+            httpRequest.setQuery((String) ReflectionUtils.invoke(request, "getQueryString", null));
+            httpRequest.setProtocol((String) ReflectionUtils.invoke(request, "getProtocol", null));
+            httpRequest.setScheme((String) ReflectionUtils.invoke(request, "getScheme", null));
+            Enumeration<?> headerNames = (Enumeration<?>) ReflectionUtils.invoke(request, "getHeaderNames", null);
+            Map<String, String> headers = new HashMap<>();
+            while (headerNames.hasMoreElements()) {
+                String headerName = (String) headerNames.nextElement();
+                String headerValue = (String) ReflectionUtils.invoke(request, "getHeader", new Class[]{String.class},headerName);
+                headers.put(headerName, headerValue);
+//                System.out.println(headerName + ": " + headerValue);
+            }
+            httpRequest.setHeaders(headers);
+            BufferedReader bufferedReader = (BufferedReader) ReflectionUtils.invoke(request, "getReader", null);
+            String line;
+            StringBuilder body = new StringBuilder();
+            while ((line = bufferedReader.readLine()) != null) {
+                body.append(line);
+            }
+            httpRequest.setBody(body.toString());
+            System.out.println(httpRequest);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return httpRequest;
+    }
     @Override
-    public void enterEntry() {
+    public void enterEntry(Class<?> cls, Object caller, Executable exe, Object[] args) {
         Logger.info("进入entry");
+        HttpRequest httpRequest = parseRequest(args[0]);
         this.tracingContext = this.vulCheckContext.getTracingContextManager().getContext();
-//        this.tracingContext.init(); // 初始化本次请求的context
+        this.tracingContext.setHttpRequet(httpRequest);
         this.tracingContext.enterEntry();
     }
-
+    // todo: 通过hook拿到HttpResponse的原始报文
+//    private String parseHttpResponse(Object response) {
+//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//
+//        BufferedWriter bufferedWriter = (BufferedWriter) ReflectionUtils.invoke(response, "getWriter", null);
+//        bufferedWriter.write();
+//    }
     @Override
-    public void exitEntry() {
+    public void exitEntry(Class<?> cls, Object caller, Executable exe, Object[] args) {
 //         todo: 发送segment到VulScanner进行分析
         this.tracingContext.exitEntry();
 //        String segmentJson = this.tracingContext.getSegment().get().toJson();

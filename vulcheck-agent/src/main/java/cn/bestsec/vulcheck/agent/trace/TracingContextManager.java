@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 
 /**

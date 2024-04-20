@@ -1,5 +1,6 @@
 package cn.bestsec.vulcheck.agent.trace;
 
+import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 
 import java.util.ArrayList;
@@ -18,8 +19,14 @@ public class Segment {
      */
     String endpoint;
 
+    private HttpRequest httpRequest;
+
     public Segment(String endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public void setHttpRequest(HttpRequest httpRequest) {
+        this.httpRequest = httpRequest;
     }
 
     public void addSpan(Span method) {

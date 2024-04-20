@@ -13,8 +13,8 @@ import java.util.HashMap;
  * @since 2023/11/20
  */
 public interface Dispatcher {
-    void enterEntry();
-    void exitEntry();
+    void enterEntry(Class<?> cls, Object caller, Executable exe, Object[] args);
+    void exitEntry(Class<?> cls, Object caller, Executable exe, Object[] args);
     void enterSource();
     OriginCaller enterPropagator(Class<?> cls, Object caller, Executable executable, Object[]args);
 
