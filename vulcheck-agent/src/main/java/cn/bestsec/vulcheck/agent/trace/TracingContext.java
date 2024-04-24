@@ -3,6 +3,7 @@ package cn.bestsec.vulcheck.agent.trace;
 import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import cn.bestsec.vulcheck.agent.utils.HashUtils;
+import cn.bestsec.vulcheck.agent.utils.PropertyUtils;
 import com.google.gson.Gson;
 import lombok.Data;
 import org.omg.PortableInterceptor.INACTIVE;
@@ -50,11 +51,13 @@ public class TracingContext {
     private int sanitizerDepth = 0;
     private final InheritableThreadLocal<Segment> segment = new InheritableThreadLocal<>();
     private final InheritableThreadLocal<HashMap<Integer, Taint>> taintPool = new InheritableThreadLocal<>();
+    private String projectName;
 
     public TracingContext(Segment segment) {
         this.segment.set(segment);
         this.globalID = UUID.randomUUID().toString();
         this.taintPool.set(new HashMap<>());
+        this.setProjectName(PropertyUtils.getProjectName());
     }
 
     public void init() {
@@ -250,7 +253,7 @@ public class TracingContext {
     }
 
     public String toString() {
-        return String.format("{\"globalID\": \"%s\", \"currentSpanID\", \"%s\", \"segment\": \"%s\"}", this.globalID,
+        return String.format("{\"globalID\": \"%s\",\"projectName\":\"%s\", \"currentSpanID\", \"%s\", \"segment\": \"%s\"}", this.globalID, this.projectName,
                 this.currentSpanID, this.segment.get().toJson());
     }
 }

@@ -216,7 +216,7 @@ public class DispatcherImpl implements Dispatcher {
             httpRequest.setProtocol((String) ReflectionUtils.invoke(request, "getProtocol", null));
             httpRequest.setScheme((String) ReflectionUtils.invoke(request, "getScheme", null));
             Enumeration<?> headerNames = (Enumeration<?>) ReflectionUtils.invoke(request, "getHeaderNames", null);
-            Map<String, String> headers = new HashMap<>();
+            Map<String, String> headers = new LinkedHashMap<>();
             while (headerNames.hasMoreElements()) {
                 String headerName = (String) headerNames.nextElement();
                 String headerValue = (String) ReflectionUtils.invoke(request, "getHeader", new Class[]{String.class},headerName);

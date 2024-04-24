@@ -76,6 +76,7 @@ public class VulCheckAgent {
                 }
             }
         }
+//        vulCheckContext.getTracingContextManager().getContext().setProjectName(getProjectName());
         agentBuilder.installOn(inst);
         if (vulCheckContext.getAgentState() == AgentState.START_FAILED) {
             Logger.info("Agent Start Failed");
@@ -84,6 +85,10 @@ public class VulCheckAgent {
         }
 
     }
+
+//    private static String getProjectName() {
+//        return System.getProperty("projectName");
+//    }
 
     public static AsmVisitorWrapper buildMethodMatchers(HookRule hookRule, TypeDescription typeDescription) {
         String signature = hookRule.getSignature();

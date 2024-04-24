@@ -15,6 +15,7 @@ public class TracingContextSerializer implements JsonSerializer<TracingContext> 
     public JsonElement serialize(TracingContext tracingContext, Type type, JsonSerializationContext jsonSerializationContext) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("globalID", tracingContext.getGlobalID());
+        jsonObject.addProperty("projectName", tracingContext.getProjectName());
         jsonObject.addProperty("currentSpanID", tracingContext.getCurrentSpanID());
         jsonObject.add("segment", jsonSerializationContext.serialize(tracingContext.getSegment().get()));
         return jsonObject;
