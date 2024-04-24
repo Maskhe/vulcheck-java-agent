@@ -1,4 +1,4 @@
-![](./logo.png)
+![](./vulcheck.svg)
 ## 简介
 
 通过Java插桩技术实现的漏洞检测工具。
