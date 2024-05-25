@@ -6,6 +6,7 @@ import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 方法调用事件
@@ -53,6 +54,7 @@ public class MethodEvent implements Span  {
     /**
      * 方法调用时间
      */
+    List<String> stack;
     Long invokeTime;
     public MethodEvent(int spanID) {
         this.spanID = spanID;
@@ -129,6 +131,11 @@ public class MethodEvent implements Span  {
 
     public MethodEvent setEventType(String eventType) {
         this.eventType = eventType;
+        return this;
+    }
+
+    public MethodEvent setStack(List<String> stack) {
+        this.stack = stack;
         return this;
     }
 

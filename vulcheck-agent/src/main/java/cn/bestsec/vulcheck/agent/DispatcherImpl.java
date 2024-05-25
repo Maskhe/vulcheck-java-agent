@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 分发器实现类
@@ -197,6 +198,8 @@ public class DispatcherImpl implements Dispatcher {
         HookRule currentHookRule = HookRuleUtils.getHookRule(methodFullName);
         MethodEvent methodEvent = new MethodEvent();
         methodEvent.setMethodFullName(methodFullName);
+        List<String> stack = Stream.of(Thread.currentThread().getStackTrace()).map(StackTraceElement::toString).collect(Collectors.toList());
+        methodEvent.setStack(stack);
         if (currentHookRule == null) {
             return;
         }

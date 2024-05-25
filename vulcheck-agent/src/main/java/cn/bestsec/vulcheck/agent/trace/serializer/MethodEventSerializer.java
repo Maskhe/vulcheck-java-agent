@@ -23,6 +23,7 @@ public class MethodEventSerializer implements JsonSerializer<MethodEvent> {
         jsonObject.addProperty("eventType", methodEvent.getEventType());
         jsonObject.addProperty("invokeTime", methodEvent.getInvokeTime());
         jsonObject.addProperty("method", methodEvent.getMethodFullName());
+        jsonObject.addProperty("stack", String.join("\n", methodEvent.getStack()));
         JsonArray jsonArray = new JsonArray();
         ArrayList<Taint> taints = methodEvent.getSourceTaints();
         for (Taint taint : taints) {
