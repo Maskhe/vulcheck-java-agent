@@ -9,6 +9,7 @@ import cn.bestsec.vulcheck.agent.trace.MethodEvent;
 import cn.bestsec.vulcheck.agent.trace.Taint;
 import cn.bestsec.vulcheck.agent.trace.TracingContext;
 import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
+import cn.bestsec.vulcheck.agent.trace.http.HttpResponse;
 import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import cn.bestsec.vulcheck.agent.utils.HookRuleUtils;
 import cn.bestsec.vulcheck.agent.utils.ReflectionUtils;
@@ -16,13 +17,12 @@ import cn.bestsec.vulcheck.spy.Dispatcher;
 import cn.bestsec.vulcheck.spy.OriginCaller;
 import org.tinylog.Logger;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -240,6 +240,20 @@ public class DispatcherImpl implements Dispatcher {
         }
         return httpRequest;
     }
+
+    public HttpResponse parseResponse(HttpResponse httpResponse, Object response) {
+        int status = (int) ReflectionUtils.invoke(response, "getStatus", null);
+        ArrayList<String> headerNames = (ArrayList<String>) ReflectionUtils.invoke(response, "getHeaderNames", null);
+        Map<String, String> headers = new LinkedHashMap<>();
+        for(String headerName : headerNames) {
+            String headerValue = (String) ReflectionUtils.invoke(response, "getHeader", new Class[]{String.class},headerName);
+            headers.put(headerName, headerValue);
+        }
+        httpResponse.setStatus(status);
+        httpResponse.setHeaders(headers);
+        return httpResponse;
+    }
+
     @Override
     public void enterEntry(Class<?> cls, Object caller, Executable exe, Object[] args) {
         Logger.info("进入entry");
@@ -259,6 +273,8 @@ public class DispatcherImpl implements Dispatcher {
     public void exitEntry(Class<?> cls, Object caller, Executable exe, Object[] args) {
 //         todo: 发送segment到VulScanner进行分析
         this.tracingContext.exitEntry();
+        // todo: 这里可能会留坑，对于那些不是springboot框架的javaweb应用，这里的getHttpResponse将返回空，报空指针异常
+        parseResponse(this.tracingContext.getHttpResponse(), args[1]);
 //        String segmentJson = this.tracingContext.getSegment().get().toJson();
         String segmentJson = this.tracingContext.toJson();
         this.vulCheckContext.report(segmentJson);
@@ -418,5 +434,24 @@ public class DispatcherImpl implements Dispatcher {
     @Override
     public boolean isEnterAgent() {
         return this.tracingContext.isEnterAgent();
+    }
+
+    @Override
+    public void enterOther(Class<?> cls, Object caller, Executable exe, Object[] args) {
+        if (this.tracingContext.isEnterEntry()) {
+            this.tracingContext.enterAgent();
+            String fullMethodName = calcMethodFullName(cls, exe);
+            if (fullMethodName.equals("org.springframework.http.converter.AbstractHttpMessageConverter.write(java.lang.Object, org.springframework.http.MediaType, org.springframework.http.HttpOutputMessage)")) {
+                HttpResponse httpResponse = new HttpResponse();
+
+                try {
+                    httpResponse.setBody(Base64.getEncoder().encodeToString(URLEncoder.encode(args[0].toString(), "UTF-8").getBytes(StandardCharsets.UTF_8)));
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+                this.tracingContext.setHttpResponse(httpResponse);
+            }
+            this.tracingContext.exitAgent();
+        }
     }
 }

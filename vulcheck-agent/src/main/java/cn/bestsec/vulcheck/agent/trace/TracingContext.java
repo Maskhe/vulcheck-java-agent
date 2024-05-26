@@ -1,6 +1,7 @@
 package cn.bestsec.vulcheck.agent.trace;
 
 import cn.bestsec.vulcheck.agent.trace.http.HttpRequest;
+import cn.bestsec.vulcheck.agent.trace.http.HttpResponse;
 import cn.bestsec.vulcheck.agent.utils.GsonUtils;
 import cn.bestsec.vulcheck.agent.utils.HashUtils;
 import cn.bestsec.vulcheck.agent.utils.PropertyUtils;
@@ -224,6 +225,14 @@ public class TracingContext {
 
     public void setHttpRequet(HttpRequest httpRequest) {
         this.segment.get().setHttpRequest(httpRequest);
+    }
+
+    public void setHttpResponse(HttpResponse httpResponse) {
+        this.segment.get().setHttpResponse(httpResponse);
+    }
+
+    public HttpResponse getHttpResponse() {
+        return this.segment.get().getHttpResponse();
     }
 
     public void reset() {

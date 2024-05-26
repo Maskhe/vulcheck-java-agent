@@ -79,4 +79,13 @@ public interface Dispatcher {
     void exitAgent();
 
     boolean isEnterAgent();
+
+    /**
+     * 进入非entry、propagator、source、sink的其他类型节点
+     * @param cls
+     * @param caller
+     * @param executable
+     * @param args
+     */
+    void enterOther(Class<?> cls, Object caller, Executable executable, Object[]args);
 }

@@ -10,7 +10,8 @@ public enum NodeTypeEnum {
     SOURCE("SOURCE", 2),
     PROPAGATOR("PROPAGATOR", 3),
     SINK("SINK", 4),
-    SANITIZER("SANITIZER", 5);
+    SANITIZER("SANITIZER", 5),
+    OTHER("OTHER", 6);
     private String name;
     private int index;
     NodeTypeEnum(String name, int index){
